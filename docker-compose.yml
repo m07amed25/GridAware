@@ -65,14 +65,26 @@ services:
 
   mosquitto:
     image: eclipse-mosquitto:2
+    env_file:
+      - path: server/.env
+        required: false
+    entrypoint: ["/bin/sh", "/mosquitto/entrypoint.sh"]
     ports:
       - "${MQTT_PORT:-1883}:1883"
       - "${MQTT_WS_PORT:-9001}:9001"
     volumes:
       - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./docker/mosquitto/entrypoint.sh:/mosquitto/entrypoint.sh:ro
       - mosquitto-data:/mosquitto/data
     healthcheck:
-      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/broker/uptime' -C 1 -W 3"]
+      test:
+        - CMD-SHELL
+        - >-
+          if [ -n "$$MQTT_USERNAME" ]; then
+            mosquitto_sub -h localhost -u "$$MQTT_USERNAME" -P "$$MQTT_PASSWORD" -t '$$SYS/broker/uptime' -C 1 -W 3;
+          else
+            mosquitto_sub -h localhost -t '$$SYS/broker/uptime' -C 1 -W 3;
+          fi
       interval: 10s
       timeout: 5s
       retries: 5
