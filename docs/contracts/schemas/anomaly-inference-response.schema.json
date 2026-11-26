@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.gridaware.example/anomaly-inference-response-1.0.json",
+  "title": "Anomaly Inference Response v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "requestId",
+    "task",
+    "result",
+    "model",
+    "input",
+    "inference"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "requestId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "task": {
+      "const": "ANOMALY_DETECTION"
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "isAnomalous",
+        "score",
+        "scoreMeaning",
+        "severitySuggestion"
+      ],
+      "properties": {
+        "isAnomalous": {
+          "type": "boolean"
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "scoreMeaning": {
+          "type": "string"
+        },
+        "severitySuggestion": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "INFO",
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL",
+            null
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "metricCode",
+              "contribution"
+            ],
+            "properties": {
+              "metricCode": {
+                "type": "string"
+              },
+              "contribution": {
+                "type": "number"
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "INCREASED",
+                  "DECREASED",
+                  "UNUSUAL_PATTERN",
+                  "UNKNOWN"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "artifactDigest"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "artifactDigest": {
+          "type": "string"
+        }
+      }
+    },
+    "evaluation": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "calibratedProbability": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "calibrationStatus": {
+          "type": "string",
+          "enum": [
+            "CALIBRATED",
+            "NOT_CALIBRATED",
+            "NOT_APPLICABLE"
+          ]
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "featureSchemaVersion",
+        "windowFrom",
+        "windowTo",
+        "qualitySummary"
+      ],
+      "properties": {
+        "featureSchemaVersion": {
+          "type": "string"
+        },
+        "windowFrom": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "windowTo": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "qualitySummary": {
+          "type": "string"
+        }
+      }
+    },
+    "inference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completedAt",
+        "durationMs"
+      ],
+      "properties": {
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "durationMs": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">GridAware — Phase Shift symbol (v2)</title>
+  <path fill="#080808" fill-rule="evenodd" d="M24 43 A18 18 0 0 1 42 25 L64 25 A12 12 0 0 1 76 37 L76 138 A5 5 0 0 1 71 143 L29 143 A5 5 0 0 1 24 138 Z"/>
+  <path fill="#080808" fill-rule="evenodd" d="M24 178 A5 5 0 0 1 29 173 L71 173 A5 5 0 0 1 76 178 L76 217 A12 12 0 0 1 64 229 L42 229 A18 18 0 0 1 24 211 Z"/>
+  <path fill="#080808" fill-rule="evenodd" d="M102 37 A12 12 0 0 1 114 25 L142 25 A12 12 0 0 1 154 37 L154 77.93 A5 5 0 0 1 152.54 81.46 L110.54 123.46 A5 5 0 0 1 102 119.93 Z"/>
+  <path fill="#080808" fill-rule="evenodd" d="M102 176.07 A5 5 0 0 1 103.46 172.54 L145.46 130.54 A5 5 0 0 1 154 134.07 L154 217 A12 12 0 0 1 142 229 L114 229 A12 12 0 0 1 102 217 Z"/>
+  <path fill="#080808" fill-rule="evenodd" d="M180 37 A12 12 0 0 1 192 25 L214 25 A18 18 0 0 1 232 43 L232 76 A5 5 0 0 1 227 81 L185 81 A5 5 0 0 1 180 76 Z"/>
+  <path fill="#080808" fill-rule="evenodd" d="M180 116 A5 5 0 0 1 185 111 L227 111 A5 5 0 0 1 232 116 L232 211 A18 18 0 0 1 214 229 L192 229 A12 12 0 0 1 180 217 Z"/>
+</svg>

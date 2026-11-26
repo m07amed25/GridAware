@@ -1,0 +1,511 @@
+openapi: 3.1.0
+info:
+  title: GridAware Public API
+  version: 1.0.0-draft
+  description: >-
+    Draft public REST contract for the GridAware simulator-first B2B SaaS MVP.
+    See docs/architecture/phase-3.3/rest-api-endpoint-catalog.md for the broader route catalog.
+servers:
+  - url: https://api.gridaware.example/api/v1
+    description: Placeholder production origin; replace during deployment design.
+  - url: http://localhost:4000/api/v1
+    description: Local development
+security:
+  - bearerAuth: []
+tags:
+  - name: Health
+  - name: Identity
+  - name: Organizations
+  - name: Sites
+  - name: Assets
+  - name: Telemetry
+  - name: Incidents
+  - name: Work Orders
+paths:
+  /health/live:
+    get:
+      tags: [Health]
+      security: []
+      summary: Liveness probe
+      responses:
+        '200': { description: Process is alive }
+  /health/ready:
+    get:
+      tags: [Health]
+      security: []
+      summary: Readiness probe
+      responses:
+        '200': { description: Required dependencies are ready }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /me:
+    get:
+      tags: [Identity]
+      summary: Return current user and organization memberships
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MeResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /organizations:
+    get:
+      tags: [Organizations]
+      summary: List organizations where caller has active membership
+      responses:
+        '200':
+          description: Organization list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrganizationListResponse' }
+    post:
+      tags: [Organizations]
+      summary: Create organization and initial OWNER membership
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateOrganizationRequest' }
+      responses:
+        '201':
+          description: Organization created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrganizationResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /organizations/{organizationId}/sites:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+    get:
+      tags: [Sites]
+      summary: List sites within an authorized organization
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Site list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SiteListResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Sites]
+      summary: Create site
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSiteRequest' }
+      responses:
+        '201':
+          description: Site created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SiteResponse' }
+  /sites/{siteId}/assets:
+    parameters:
+      - $ref: '#/components/parameters/SiteId'
+    get:
+      tags: [Assets]
+      summary: List assets at a site
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Asset list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AssetListResponse' }
+    post:
+      tags: [Assets]
+      summary: Register asset under a site
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateAssetRequest' }
+      responses:
+        '201':
+          description: Asset registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AssetResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /assets/{assetId}/telemetry:
+    parameters:
+      - $ref: '#/components/parameters/AssetId'
+    get:
+      tags: [Telemetry]
+      summary: Query asset telemetry within a bounded time range
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+        - name: metric
+          in: query
+          schema: { type: string }
+        - name: interval
+          in: query
+          schema: { type: string, enum: [raw, 1m, 5m, 15m, 1h] }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Telemetry readings or downsampled time series
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TelemetryResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /organizations/{organizationId}/incidents:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+    get:
+      tags: [Incidents]
+      summary: List incidents in an authorized organization
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: severity
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Incident list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IncidentListResponse' }
+    post:
+      tags: [Incidents]
+      summary: Create a manually reported incident
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateIncidentRequest' }
+      responses:
+        '201':
+          description: Incident created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IncidentResponse' }
+  /incidents/{incidentId}/assign:
+    parameters:
+      - $ref: '#/components/parameters/IncidentId'
+    post:
+      tags: [Incidents]
+      summary: Assign incident to an active organization member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [assigneeUserId]
+              properties:
+                assigneeUserId: { type: string, format: uuid }
+                note: { type: string, maxLength: 1000 }
+      responses:
+        '200': { description: Assignment updated }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /work-orders/{workOrderId}/complete:
+    parameters:
+      - $ref: '#/components/parameters/WorkOrderId'
+    post:
+      tags: [Work Orders]
+      summary: Complete assigned work order with findings
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [completionSummary]
+              properties:
+                completionSummary: { type: string, minLength: 5, maxLength: 5000 }
+                findings:
+                  type: array
+                  maxItems: 50
+                  items: { type: string, maxLength: 500 }
+                completedAt: { type: string, format: date-time }
+      responses:
+        '200': { description: Work order completed }
+        '409': { $ref: '#/components/responses/Conflict' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Abstract bearer access credential; exact token/session implementation is pending AUTH-01.
+  parameters:
+    OrganizationId:
+      name: organizationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SiteId:
+      name: siteId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AssetId:
+      name: assetId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IncidentId:
+      name: incidentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    WorkOrderId:
+      name: workOrderId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string, maxLength: 2048 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema: { type: string, minLength: 16, maxLength: 128 }
+  schemas:
+    Meta:
+      type: object
+      required: [requestId]
+      properties:
+        requestId: { type: string }
+        servedAt: { type: string, format: date-time }
+        pagination:
+          type: object
+          properties:
+            nextCursor: { type: [string, 'null'] }
+            hasMore: { type: boolean }
+            limit: { type: integer }
+    Problem:
+      type: object
+      required: [title, status, code, requestId]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string }
+        detail: { type: string }
+        instance: { type: string }
+        requestId: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              code: { type: string }
+              message: { type: string }
+    MeResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [id, email, memberships]
+          properties:
+            id: { type: string, format: uuid }
+            email: { type: string, format: email }
+            displayName: { type: string }
+            memberships: { type: array, items: { type: object } }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Organization:
+      type: object
+      required: [id, name, slug, status]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        status: { type: string, enum: [ACTIVE, SUSPENDED, ARCHIVED] }
+    CreateOrganizationRequest:
+      type: object
+      additionalProperties: false
+      required: [name, slug]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        slug: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        timezone: { type: string, example: Africa/Cairo }
+    OrganizationResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/Organization' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    OrganizationListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Organization' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Site:
+      type: object
+      required: [id, code, name, timezone, status]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        timezone: { type: string }
+        status: { type: string }
+    CreateSiteRequest:
+      type: object
+      additionalProperties: false
+      required: [code, name, timezone]
+      properties:
+        code: { type: string, maxLength: 40 }
+        name: { type: string, minLength: 2, maxLength: 160 }
+        timezone: { type: string, example: Africa/Cairo }
+        address: { type: [string, 'null'], maxLength: 500 }
+    SiteResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/Site' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    SiteListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Site' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Asset:
+      type: object
+      required: [id, code, name, assetTypeCode, criticality, status]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        assetTypeCode: { type: string }
+        criticality: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL] }
+        status: { type: string }
+    CreateAssetRequest:
+      type: object
+      additionalProperties: false
+      required: [code, name, assetTypeCode, criticality]
+      properties:
+        code: { type: string, maxLength: 40 }
+        name: { type: string, minLength: 2, maxLength: 160 }
+        assetTypeCode: { type: string }
+        buildingId: { type: [string, 'null'], format: uuid }
+        criticality: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL] }
+        manufacturer: { type: [string, 'null'], maxLength: 120 }
+        model: { type: [string, 'null'], maxLength: 120 }
+    AssetResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/Asset' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    AssetListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Asset' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+    TelemetryPoint:
+      type: object
+      required: [sensorId, metricCode, value, unit, observedAt, quality, source]
+      properties:
+        sensorId: { type: string, format: uuid }
+        metricCode: { type: string }
+        value: { type: number }
+        unit: { type: string }
+        observedAt: { type: string, format: date-time }
+        quality: { type: string, enum: [VALID, SUSPECT, INVALID] }
+        source: { type: string, enum: [SIMULATOR, DEVICE, IMPORT] }
+    TelemetryResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/TelemetryPoint' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Incident:
+      type: object
+      required: [id, title, severity, status, assetId]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        severity: { type: string, enum: [INFO, LOW, MEDIUM, HIGH, CRITICAL] }
+        status: { type: string, enum: [DETECTED, TRIAGED, ASSIGNED, INVESTIGATING, RESOLVED, CLOSED] }
+        assetId: { type: string, format: uuid }
+    CreateIncidentRequest:
+      type: object
+      additionalProperties: false
+      required: [siteId, assetId, title, description, severity]
+      properties:
+        siteId: { type: string, format: uuid }
+        assetId: { type: string, format: uuid }
+        title: { type: string, minLength: 3, maxLength: 160 }
+        description: { type: string, minLength: 5, maxLength: 5000 }
+        severity: { type: string, enum: [INFO, LOW, MEDIUM, HIGH, CRITICAL] }
+    IncidentResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/Incident' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    IncidentListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Incident' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Unauthenticated
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Authenticated but not authorized
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: State or idempotency conflict
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ServiceUnavailable:
+      description: Required dependency not ready
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }

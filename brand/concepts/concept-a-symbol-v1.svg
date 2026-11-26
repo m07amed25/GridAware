@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">GridAware — Node G symbol (v1)</title>
+  <path fill="#080808" fill-rule="evenodd" d="M24 43 A20 20 0 0 1 44 23 L148 23 A8 8 0 0 1 156 31 L156 59 A8 8 0 0 1 148 67 L82 67 A10 10 0 0 0 72 77 L72 177 A10 10 0 0 0 82 187 L176 187 A8 8 0 0 0 184 179 L184 157 A6 6 0 0 0 178 151 L126 151 A8 8 0 0 1 118 143 L118 117 A8 8 0 0 1 126 109 L220 109 A12 12 0 0 1 232 121 L232 211 A20 20 0 0 1 212 231 L44 231 A20 20 0 0 1 24 211 Z"/>
+  <path fill="#080808" fill-rule="evenodd" d="M184 31 A8 8 0 0 1 192 23 L212 23 A20 20 0 0 1 232 43 L232 63 A8 8 0 0 1 224 71 L194 71 A10 10 0 0 1 184 61 Z"/>
+</svg>

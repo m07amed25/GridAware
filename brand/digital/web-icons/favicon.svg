@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">GridAware favicon</title>
+  <rect id="tile" x="0" y="0" width="256" height="256" rx="48" fill="#080808"/>
+  <path id="grid-g" fill="#FFFFFF" d="M32 48 A16 16 0 0 1 48 32 L138 32 A6 6 0 0 1 144 38 L144 58 A6 6 0 0 1 138 64 L70 64 A6 6 0 0 0 64 70 L64 186 A6 6 0 0 0 70 192 L186 192 A6 6 0 0 0 192 186 L192 148 A4 4 0 0 0 188 144 L118 144 A6 6 0 0 1 112 138 L112 118 A6 6 0 0 1 118 112 L214 112 A10 10 0 0 1 224 122 L224 208 A16 16 0 0 1 208 224 L48 224 A16 16 0 0 1 32 208 Z"/>
+  <path id="sensor-node" fill="#F4E952" d="M176 40 A8 8 0 0 1 184 32 L208 32 A16 16 0 0 1 224 48 L224 72 A8 8 0 0 1 216 80 L184 80 A8 8 0 0 1 176 72 Z"/>
+</svg>

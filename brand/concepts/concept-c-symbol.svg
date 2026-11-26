@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">GridAware — Focal Grid symbol (v2)</title>
+  <path fill="#080808" fill-rule="evenodd" d="M137 22.39 V86 A6 6 0 0 1 131 92 H29.01 A105 105 0 0 1 137 22.39 Z"/>
+  <path fill="#080808" fill-rule="evenodd" d="M23.39 118 H131 A6 6 0 0 1 137 124 V231.61 A105 105 0 0 1 23.39 118 Z"/>
+  <path fill="#080808" fill-rule="evenodd" d="M169 118 H232.61 A105 105 0 0 1 163 225.99 V124 A6 6 0 0 1 169 118 Z"/>
+  <path fill="#080808" fill-rule="evenodd" d="M190 38 A27 27 0 1 1 190 92 A27 27 0 1 1 190 38 Z"/>
+</svg>

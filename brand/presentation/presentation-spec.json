@@ -1,0 +1,59 @@
+{
+  "brand": "GridAware",
+  "deck_title": "Brand Identity & Logo System",
+  "tagline": "From equipment telemetry to actionable maintenance intelligence.",
+  "brief": "GridAware is a multi-tenant B2B SaaS platform for factories and commercial buildings that connects infrastructure registries, live telemetry, threshold/anomaly detection, and traceable maintenance workflows in one calm, dark-first system.",
+  "adjectives": [
+    "Precise",
+    "Structured",
+    "Vigilant",
+    "Calm",
+    "Traceable"
+  ],
+  "criteria": "Success criteria: unmistakable at 16 px and in the 72 px collapsed sidebar rail, works in pure monochrome and dark-first EVARAX color (#F4E952 on #080808), avoids industrial clip-art and blue SaaS clichés, and scales into a full product system.",
+  "industry": "software",
+  "mockups": [
+    "website",
+    "favicon-tab",
+    "app-icon",
+    "readme",
+    "terminal",
+    "signage"
+  ],
+  "nav": [
+    "Infrastructure",
+    "Monitoring",
+    "Docs"
+  ],
+  "brand_color": "#F4E952",
+  "tile_color": "#080808",
+  "greyscale": false,
+  "final": true,
+  "designer": "GridAware Design System · EVARAX",
+  "concepts": [
+    {
+      "name": "Node G — Modular Brand Signature",
+      "symbol": "../source/gridaware-symbol-ink.svg",
+      "avatar": "../source/gridaware-symbol-small.svg",
+      "lockup": "../source/gridaware-horizontal-badge-light.svg",
+      "stacked": "../source/gridaware-stacked-ink.svg",
+      "symbol_on_tile": "../source/gridaware-symbol-small-dark.svg",
+      "symbol_on_dark": "../source/gridaware-symbol-dark.svg",
+      "lockup_on_dark": "../source/gridaware-horizontal-dark.svg",
+      "stacked_on_dark": "../source/gridaware-stacked-dark.svg",
+      "idea": "A bold architectural G fused from a 3×3 infrastructure grid, with its upper-right cell detached as a live EVARAX telemetry node.",
+      "rationale": [
+        "Unites Grid (structured 3×3 facility matrix) and Aware (the single monitored node caught in focus).",
+        "High-contrast EVARAX pairing: Pure White (#FFFFFF) + Soft Yellow (#F4E952, 15.85:1) on Near Black (#080808).",
+        "Engineered across optical cuts: standard master, pixel-hinted 16 px cut, and 4.3% thinned reversed white cut.",
+        "Unbounded Custom logotype: avant-garde wide display grotesque with sculptural ink-traps, bespoke Node-squircle i-tittle, and zero font dependency."
+      ]
+    }
+  ],
+  "recommendation": "Deploy gridaware-horizontal-dark.svg in the 248 px expanded sidebar, gridaware-symbol-small-dark.svg in the 72 px collapsed rail, and the web-icons bundle in apps/web/public.",
+  "next_steps": [
+    "Copy brand/digital/web-icons/* into apps/web/public/ when bootstrapping the Next.js frontend.",
+    "Run a formal trademark and reverse-image clearance search in target commercial jurisdictions before commercial launch.",
+    "Verify physical Pantone / CMYK drawdowns with print vendors before producing facility signage or uniforms."
+  ]
+}

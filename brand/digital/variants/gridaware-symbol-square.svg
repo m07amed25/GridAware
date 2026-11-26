@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title>GridAware logo</title><g transform="translate(-4.35 -3.32) scale(1.034)">
+  <title id="title">GridAware symbol (Near Black)</title>
+  <path id="grid-g" fill="#080808" d="M24 43 A20 20 0 0 1 44 23 L148 23 A8 8 0 0 1 156 31 L156 57 A8 8 0 0 1 148 65 L80 65 A10 10 0 0 0 70 75 L70 179 A10 10 0 0 0 80 189 L176 189 A10 10 0 0 0 186 179 L186 154 A6 6 0 0 0 180 148 L126 148 A8 8 0 0 1 118 140 L118 116 A8 8 0 0 1 126 108 L220 108 A12 12 0 0 1 232 120 L232 211 A20 20 0 0 1 212 231 L44 231 A20 20 0 0 1 24 211 Z"/>
+  <path id="sensor-node" fill="#080808" d="M184 32 A9 9 0 0 1 193 23 L212 23 A20 20 0 0 1 232 43 L232 62 A9 9 0 0 1 223 71 L195 71 A11 11 0 0 1 184 60 Z"/>
+</g></svg>

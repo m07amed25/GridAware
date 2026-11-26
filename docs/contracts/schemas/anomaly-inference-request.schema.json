@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.gridaware.example/anomaly-inference-request-1.0.json",
+  "title": "Anomaly Inference Request v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "requestId",
+    "requestedModel",
+    "asset",
+    "window",
+    "featureSchemaVersion",
+    "source",
+    "series"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "requestId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "correlationId": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "requestedModel": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assetId",
+        "assetTypeCode"
+      ],
+      "properties": {
+        "assetId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "assetTypeCode": {
+          "type": "string",
+          "maxLength": 64
+        }
+      }
+    },
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to",
+        "sampleCount"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sampleCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "expectedIntervalSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "featureSchemaVersion": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "SIMULATOR",
+        "DEVICE",
+        "IMPORT"
+      ]
+    },
+    "series": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sensorId",
+          "metricCode",
+          "unit",
+          "observedAt",
+          "value",
+          "quality"
+        ],
+        "properties": {
+          "sensorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "metricCode": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "value": {
+            "type": "number"
+          },
+          "quality": {
+            "type": "string",
+            "enum": [
+              "VALID",
+              "SUSPECT",
+              "INVALID"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

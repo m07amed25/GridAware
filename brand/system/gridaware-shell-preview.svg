@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" width="1200" height="520" role="img" aria-labelledby="title">
+  <title id="title">GridAware application shell and EVARAX token integration</title>
+  <rect width="1200" height="520" fill="#080808"/>
+  <g transform="translate(36, 36)">
+    <rect width="680" height="448" rx="14" fill="#080808" stroke="#2A2A2A"/>
+    <rect width="248" height="448" rx="14" fill="#101010"/>
+    <line x1="248" y1="0" x2="248" y2="448" stroke="#2A2A2A"/>
+    <line x1="248" y1="64" x2="680" y2="64" stroke="#2A2A2A"/>
+    <line x1="0" y1="64" x2="248" y2="64" stroke="#2A2A2A"/>
+    <g transform="translate(14.62, 10.46) scale(0.16827)">
+      <path fill="#FFFFFF" d="M 32 60.8 A 16 16 0 0 1 48 44.8 L 131.2 44.8 A 6.4 6.4 0 0 1 137.6 51.2 L 137.6 72 A 6.4 6.4 0 0 1 131.2 78.4 L 76.8 78.4 A 8 8 0 0 0 68.8 86.4 L 68.8 169.6 A 8 8 0 0 0 76.8 177.6 L 153.6 177.6 A 8 8 0 0 0 161.6 169.6 L 161.6 149.6 A 4.8 4.8 0 0 0 156.8 144.8 L 113.6 144.8 A 6.4 6.4 0 0 1 107.2 138.4 L 107.2 119.2 A 6.4 6.4 0 0 1 113.6 112.8 L 188.8 112.8 A 9.6 9.6 0 0 1 198.4 122.4 L 198.4 195.2 A 16 16 0 0 1 182.4 211.2 L 48 211.2 A 16 16 0 0 1 32 195.2 Z"/>
+      <path fill="#F4E952" d="M 160 52 A 7.2 7.2 0 0 1 167.2 44.8 L 182.4 44.8 A 16 16 0 0 1 198.4 60.8 L 198.4 76 A 7.2 7.2 0 0 1 191.2 83.2 L 168.8 83.2 A 8.8 8.8 0 0 1 160 74.4 Z"/>
+      <path fill="#FFFFFF" d="M338.22 134.85C337.51 156.22 322.73 174.84 294.14 174.84C266.56 174.84 244.69 158.08 244.69 129C244.69 99.92 266.39 83.16 295.31 83.16C323.77 83.16 341.51 97.46 344.91 117.56H323.03C320.65 107.59 310.18 101.45 295.34 101.45C277.64 101.45 266.52 111.09 266.52 129C266.52 147.01 278.41 157.05 297.2 157.05C315.39 157.05 327.73 148.4 328.83 134.1ZM299.76 143.65V128.13H345.75V173H330.26L327.3 137.69L331.63 143.65Z"/>
+      <path fill="#FFFFFF" d="M352.54 106.15H374.2L378.19 130.17V173H356.83V128.32ZM410.24 105.28V123.64C392.31 119.66 378.19 124.01 378.19 144.69L373.93 139.41C376.13 118.91 385.27 102.27 406 104.55Q408.22 104.79 410.24 105.28Z"/>
+      <path fill="#FFFFFF" d="M416.37 105.28 427.06 107.38 437.74 105.28V173H416.37Z M415.73 81.43 A4.53 4.53 0 0 1 420.26 76.9 L429.32 76.9 A9.06 9.06 0 0 1 438.38 85.96 L438.38 95.01 A4.53 4.53 0 0 1 433.85 99.54 L420.26 99.54 A4.53 4.53 0 0 1 415.73 95.01 Z"/>
+      <path fill="#FFFFFF" d="M510.53 173 507.6 147.82 511.5 139.76 507.67 129.79 513.09 82.65H535.22L528.59 138.02L532.59 173ZM515.48 139.6C511.91 160.78 498.19 174.84 479.36 174.84C459.78 174.84 446.2 160.54 446.2 139.6C446.2 118.42 459.78 104.31 479.36 104.31C498.19 104.31 512.14 118.08 515.48 139.6ZM467.8 139.6C467.8 150.61 475.14 158.35 485.51 158.35C496.11 158.35 505.4 150.61 509.14 139.6C505.4 128.59 496.11 120.8 485.51 120.8C475.14 120.8 467.8 128.59 467.8 139.6Z"/>
+      <path fill="#FFFFFF" d="M561.46 155.09V137.57H622.3V155.09ZM606.43 85 647.14 173H623.99L588.98 94.02H595.7L560.68 173H537.53L578.25 85Z"/>
+      <path fill="#FFFFFF" d="M732.49 161.2H725.66L745.78 106.15H767.14L741.57 173H719.76L698.02 116.22H705.43L683.35 173H661.53L636.03 106.15H657.53L677.72 161.2H670.69L691.47 106.15H712.05Z"/>
+      <path fill="#FFFFFF" d="M829.29 173 826.36 148.7 829.56 139.6 826.36 130.61 829.29 106.15H851.42L847.41 139.55L851.42 173ZM834.62 139.6C831.05 160.78 817.34 174.84 798.5 174.84C778.93 174.84 765.35 160.54 765.35 139.6C765.35 118.42 778.93 104.31 798.5 104.31C817.34 104.31 831.29 118.08 834.62 139.6ZM786.94 139.6C786.94 150.61 794.28 158.35 804.65 158.35C815.25 158.35 824.55 150.61 828.29 139.6C824.55 128.59 815.25 120.8 804.65 120.8C794.28 120.8 786.94 128.59 786.94 139.6Z"/>
+      <path fill="#FFFFFF" d="M858.84 106.15H880.5L884.49 130.17V173H863.12V128.32ZM916.53 105.28V123.64C898.6 119.66 884.49 124.01 884.49 144.69L880.23 139.41C882.42 118.91 891.57 102.27 912.29 104.55Q914.51 104.79 916.53 105.28Z"/>
+      <path fill="#FFFFFF" d="M959 174.84C934.98 174.84 917.36 160.56 917.36 139.38C917.36 118.44 934.28 104.31 957.27 104.31C980.74 104.31 994.97 120.59 994.97 145.98H934.55V132.39H983.26L975.48 137.23C974.68 126.16 968.06 119.72 957.56 119.72C946.15 119.72 938.96 126.99 938.96 137.8C938.96 151.11 948.24 158.93 964.64 158.93Q972.12 158.93 979.66 156.84Q987.19 154.76 993.19 150.96V164.95Q986.5 169.64 977.71 172.24Q968.92 174.84 959 174.84Z"/>
+    </g>
+    <rect x="12" y="84" width="224" height="36" rx="8" fill="#171717" stroke="#2A2A2A"/>
+    <rect x="12" y="92" width="3" height="20" rx="1.5" fill="#F4E952"/>
+    <text x="28" y="107" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Dashboard</text>
+    <text x="28" y="149" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" fill="#B8BDC7">Infrastructure</text>
+    <text x="28" y="191" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" fill="#B8BDC7">Monitoring</text>
+    <text x="28" y="233" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" fill="#B8BDC7">Alerts</text>
+    <text x="28" y="275" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" fill="#B8BDC7">Incidents</text>
+    <text x="28" y="317" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" fill="#B8BDC7">Work Orders</text>
+    <rect x="268" y="16" width="164" height="32" rx="8" fill="#171717" stroke="#363636"/>
+    <text x="282" y="36" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="12" font-weight="500" fill="#E9ECF2">North Factory · Org</text>
+    <rect x="554" y="18" width="106" height="28" rx="14" fill="#171717" stroke="#FCCE35"/>
+    <text x="572" y="36" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="10" font-weight="600" fill="#FCCE35">SIMULATED</text>
+    <text x="272" y="108" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="20" font-weight="600" fill="#FFFFFF">Generator-01 Telemetry</text>
+    <rect x="272" y="128" width="184" height="96" rx="12" fill="#171717" stroke="#2A2A2A"/>
+    <text x="290" y="154" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="12" fill="#9298A3">Coolant Temp</text>
+    <text x="290" y="190" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="26" font-weight="700" fill="#E9ECF2">86.5 °C</text>
+    <text x="290" y="210" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="11" fill="#35C58A">● Operational · Live</text>
+    <rect x="472" y="128" width="184" height="96" rx="12" fill="#171717" stroke="#2A2A2A"/>
+    <text x="490" y="154" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="12" fill="#9298A3">Primary Action CTA</text>
+    <rect x="490" y="170" width="148" height="36" rx="8" fill="#F4E952"/>
+    <text x="514" y="193" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="12" font-weight="600" fill="#080808">Create work order</text>
+    <text x="20" y="426" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="11" fill="#9298A3">248px Expanded Shell</text>
+  </g>
+  <g transform="translate(748, 36)">
+    <rect width="416" height="448" rx="14" fill="#080808" stroke="#2A2A2A"/>
+    <rect width="72" height="448" rx="14" fill="#101010"/>
+    <line x1="72" y1="0" x2="72" y2="448" stroke="#2A2A2A"/>
+    <line x1="0" y1="64" x2="416" y2="64" stroke="#2A2A2A"/>
+    <path fill="#FFFFFF" d="M 22 20.5 A 2.5 2.5 0 0 1 24.5 18 L 37 18 A 1 1 0 0 1 38 19 L 38 23 A 1 1 0 0 1 37 24 L 29 24 A 1 1 0 0 0 28 25 L 28 39 A 1 1 0 0 0 29 40 L 43 40 A 1 1 0 0 0 44 39 L 44 36.75 A 0.75 0.75 0 0 0 43.25 36 L 35 36 A 1 1 0 0 1 34 35 L 34 31 A 1 1 0 0 1 35 30 L 48.5 30 A 1.5 1.5 0 0 1 50 31.5 L 50 43.5 A 2.5 2.5 0 0 1 47.5 46 L 24.5 46 A 2.5 2.5 0 0 1 22 43.5 Z"/>
+    <path fill="#F4E952" d="M 42 19.25 A 1.25 1.25 0 0 1 43.25 18 L 47.5 18 A 2.5 2.5 0 0 1 50 20.5 L 50 24.75 A 1.25 1.25 0 0 1 48.75 26 L 43.25 26 A 1.25 1.25 0 0 1 42 24.75 Z"/>
+    <rect x="16" y="84" width="40" height="40" rx="8" fill="#171717" stroke="#363636"/>
+    <circle cx="36" cy="104" r="5" fill="#F6FA45"/>
+    <rect x="26" y="138" width="20" height="20" rx="5" fill="#202020"/>
+    <rect x="26" y="182" width="20" height="20" rx="5" fill="#202020"/>
+    <rect x="26" y="226" width="20" height="20" rx="5" fill="#202020"/>
+    <rect x="26" y="270" width="20" height="20" rx="5" fill="#202020"/>
+    <text x="96" y="40" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="11" fill="#9298A3">72px Collapsed Rail + EVARAX Tokens</text>
+    <rect x="96" y="84" width="296" height="46" rx="8" fill="#F4E952" stroke="none"/>
+    <text x="112" y="112" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" font-weight="700" fill="#080808">Soft Yellow</text>
+    <text x="232" y="112" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="11" fill="#080808">#F4E952</text>
+    <rect x="96" y="140" width="296" height="46" rx="8" fill="#F6FA45" stroke="none"/>
+    <text x="112" y="168" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" font-weight="700" fill="#080808">Neon Lime</text>
+    <text x="232" y="168" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="11" fill="#080808">#F6FA45</text>
+    <rect x="96" y="196" width="296" height="46" rx="8" fill="#FCCE35" stroke="none"/>
+    <text x="112" y="224" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" font-weight="700" fill="#080808">Golden Yellow</text>
+    <text x="232" y="224" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="11" fill="#080808">#FCCE35</text>
+    <rect x="96" y="252" width="296" height="46" rx="8" fill="#080808" stroke="#363636"/>
+    <text x="112" y="280" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" font-weight="700" fill="#E9ECF2">Near Black</text>
+    <text x="232" y="280" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="11" fill="#E9ECF2">#080808</text>
+    <rect x="96" y="308" width="296" height="46" rx="8" fill="#E9ECF2" stroke="none"/>
+    <text x="112" y="336" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" font-weight="700" fill="#080808">Cool White</text>
+    <text x="232" y="336" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="11" fill="#080808">#E9ECF2</text>
+    <rect x="96" y="364" width="296" height="46" rx="8" fill="#FFFFFF" stroke="none"/>
+    <text x="112" y="392" font-family="system-ui,-apple-system,Segoe UI,Inter,sans-serif" font-size="13" font-weight="700" fill="#080808">Pure White</text>
+    <text x="232" y="392" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="11" fill="#080808">#FFFFFF</text>
+  </g>
+</svg>

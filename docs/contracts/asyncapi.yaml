@@ -1,0 +1,80 @@
+asyncapi: 2.6.0
+info:
+  title: GridAware MQTT Device Messaging
+  version: 1.0.0-draft
+  description: Draft MQTT contract for simulator-first telemetry and device status.
+defaultContentType: application/json
+servers:
+  local:
+    url: localhost:1883
+    protocol: mqtt
+    description: Local Mosquitto development broker; use isolated local-only credentials.
+  production:
+    url: mqtt.gridaware.example:8883
+    protocol: mqtts
+    description: Placeholder secure broker origin; replace during deployment design.
+channels:
+  gridaware/v1/orgs/{organizationId}/sites/{siteId}/devices/{deviceId}/telemetry:
+    parameters:
+      organizationId: { description: Organization bound to authenticated Device, schema: { type: string, format: uuid } }
+      siteId: { description: Site bound to authenticated Device, schema: { type: string, format: uuid } }
+      deviceId: { description: Authenticated producer Device, schema: { type: string, format: uuid } }
+    publish:
+      operationId: publishTelemetry
+      summary: Publish a telemetry envelope
+      message:
+        name: TelemetryEnvelopeV1
+        contentType: application/json
+        payload:
+          $ref: './schemas/telemetry-envelope.schema.json'
+        bindings:
+          mqtt:
+            qos: 1
+  gridaware/v1/orgs/{organizationId}/sites/{siteId}/devices/{deviceId}/status:
+    parameters:
+      organizationId: { schema: { type: string, format: uuid } }
+      siteId: { schema: { type: string, format: uuid } }
+      deviceId: { schema: { type: string, format: uuid } }
+    publish:
+      operationId: publishDeviceStatus
+      summary: Publish last-known Device status
+      message:
+        name: DeviceStatusV1
+        contentType: application/json
+        payload:
+          $ref: './schemas/device-status.schema.json'
+        bindings:
+          mqtt:
+            qos: 1
+  gridaware/v1/orgs/{organizationId}/sites/{siteId}/devices/{deviceId}/events:
+    parameters:
+      organizationId: { schema: { type: string, format: uuid } }
+      siteId: { schema: { type: string, format: uuid } }
+      deviceId: { schema: { type: string, format: uuid } }
+    publish:
+      operationId: publishDeviceEvent
+      summary: Publish bounded diagnostic or lifecycle event
+      message:
+        name: DeviceEventV1
+        contentType: application/json
+        payload:
+          type: object
+          additionalProperties: false
+          required: [schemaVersion, eventId, deviceId, eventType, observedAt]
+          properties:
+            schemaVersion: { const: '1.0' }
+            eventId: { type: string, format: uuid }
+            deviceId: { type: string, format: uuid }
+            eventType: { type: string, enum: [DEVICE_DIAGNOSTIC, DEVICE_CONFIGURATION_CHANGED] }
+            observedAt: { type: string, format: date-time }
+            details: { type: object }
+        bindings:
+          mqtt:
+            qos: 1
+components:
+  securitySchemes:
+    devicePassword:
+      type: userPassword
+      description: Per-device credentials mapped to one Device and exact topic ACL scope.
+security:
+  - devicePassword: []
