@@ -4,8 +4,30 @@ export interface HealthResponse {
   timestamp: string;
 }
 
+const DEFAULT_INTERNAL_URL = "http://localhost:3001";
+
+function stripTrailingSlash(url: string): string {
+  return url.replace(/\/+$/, "");
+}
+
 export function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
+  const publicUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  const normalizedPublic = publicUrl ? stripTrailingSlash(publicUrl) : "";
+
+  if (typeof window === "undefined") {
+    const internalBase = stripTrailingSlash(
+      process.env.API_INTERNAL_URL?.trim() || DEFAULT_INTERNAL_URL,
+    );
+    if (!normalizedPublic) {
+      return `${internalBase}/api/v1`;
+    }
+    if (normalizedPublic.startsWith("/")) {
+      return `${internalBase}${normalizedPublic}`;
+    }
+    return normalizedPublic;
+  }
+
+  return normalizedPublic || "/api/v1";
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
