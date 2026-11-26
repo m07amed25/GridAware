@@ -1,0 +1,17 @@
+{
+  "name": "gridware",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@12.18.0",
+  "scripts": {
+    "dev": "concurrently -n CLIENT,SERVER -c cyan,magenta --kill-others-on-fail \"pnpm --filter client dev\" \"pnpm --filter server start:dev\"",
+    "dev:client": "pnpm --filter client dev",
+    "dev:server": "pnpm --filter server start:dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r --if-present test"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7"
+  }
+}
