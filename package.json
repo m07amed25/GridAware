@@ -9,7 +9,13 @@
     "dev:server": "pnpm --filter server start:dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml watch",
+    "docker:infra": "docker compose up -d redis mosquitto",
+    "docker:logs": "docker compose logs -f",
+    "simulate": "pnpm --filter server simulate --"
   },
   "devDependencies": {
     "concurrently": "^10.0.7"

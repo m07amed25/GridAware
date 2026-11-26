@@ -2,11 +2,20 @@ import { Module } from '@nestjs/common';
 import { createObserveModule } from '@nestjs/observe';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { PrismaModule } from './database/prisma.module.js';
+import { HealthController } from './health/health.controller.js';
+import { MqttModule } from './mqtt/mqtt.module.js';
+import { RedisModule } from './redis/redis.module.js';
+import { TelemetryModule } from './telemetry/telemetry.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
   imports: [
+    PrismaModule,
+    RedisModule,
+    MqttModule,
+    TelemetryModule,
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com,
     // then run `npx @nestjs/observe link` to write your key pair into .env.
@@ -16,7 +25,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       serviceId: 'server',
     }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}

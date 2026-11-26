@@ -1,0 +1,55 @@
+# Development override: hot-reload containers kept in sync via Compose Watch.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml watch
+#
+# Source changes are synced into the container (no bind mounts, so container
+# node_modules stay Linux-native). Dependency changes trigger a rebuild.
+
+services:
+  client:
+    build:
+      target: dev
+    image: gridaware/client:dev
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+    healthcheck:
+      disable: true
+    develop:
+      watch:
+        - action: sync
+          path: ./client
+          target: /app/client
+          ignore:
+            - node_modules/
+            - .next/
+        - action: rebuild
+          path: ./client/package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+
+  server:
+    build:
+      target: dev
+    image: gridaware/server:dev
+    environment:
+      NODE_ENV: development
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/v1/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 10
+    develop:
+      watch:
+        - action: sync
+          path: ./server/src
+          target: /app/server/src
+          ignore:
+            - generated/
+        - action: rebuild
+          path: ./server/prisma
+        - action: rebuild
+          path: ./server/package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
