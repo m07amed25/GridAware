@@ -1,5 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { connectAsync } from 'mqtt';
+import { validateSimulatorEnv } from '../config/env.schema.js';
 import { loadEnvIfPresent } from '../load-env.js';
 import { buildDeviceTopic } from '../telemetry/telemetry-topic.js';
 import {
@@ -46,7 +47,8 @@ function parseNonNegativeInt(
 }
 
 async function main(): Promise<void> {
-  const mqttUrl = process.env.MQTT_URL ?? 'mqtt://localhost:1883';
+  const env = validateSimulatorEnv();
+  const mqttUrl = env.MQTT_URL;
   const scenario = parseScenario(readArg('scenario'));
   const intervalMs = parseNonNegativeInt(readArg('interval'), 1000, 'interval');
   const count = parseNonNegativeInt(readArg('count'), 0, 'count');
@@ -78,8 +80,8 @@ async function main(): Promise<void> {
 
   const client = await connectAsync(mqttUrl, {
     clientId: `gridaware-sim-${simulationRunId.slice(0, 8)}`,
-    username: process.env.MQTT_USERNAME || undefined,
-    password: process.env.MQTT_PASSWORD || undefined,
+    username: env.MQTT_USERNAME,
+    password: env.MQTT_PASSWORD,
     protocolVersion: 5,
     clean: true,
     will: {

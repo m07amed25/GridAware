@@ -3,6 +3,38 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+function resolveDatabaseUrl(): string | undefined {
+  const unpooled = process.env["DATABASE_URL_UNPOOLED"]?.trim();
+  const pooled = process.env["DATABASE_URL"]?.trim();
+  const candidate = unpooled || pooled;
+  const source = unpooled ? "DATABASE_URL_UNPOOLED" : "DATABASE_URL";
+
+  if (!candidate) {
+    // Allow `prisma generate` during Docker image builds when DB credentials are absent.
+    return undefined;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new Error(
+      `Invalid Prisma environment configuration:\n  - ${source}: Expected a valid PostgreSQL URL (postgres://, postgresql://)`,
+    );
+  }
+
+  if (
+    (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") ||
+    !parsed.hostname
+  ) {
+    throw new Error(
+      `Invalid Prisma environment configuration:\n  - ${source}: Expected a valid PostgreSQL URL (postgres://, postgresql://)`,
+    );
+  }
+
+  return candidate;
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -10,6 +42,6 @@ export default defineConfig({
   },
   datasource: {
     // Use Neon's direct (unpooled) URL for Prisma CLI / migrations
-    url: process.env["DATABASE_URL_UNPOOLED"] ?? process.env["DATABASE_URL"],
+    url: resolveDatabaseUrl(),
   },
 });

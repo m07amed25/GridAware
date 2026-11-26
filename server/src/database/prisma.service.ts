@@ -1,5 +1,6 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaNeon } from '@prisma/adapter-neon';
+import { EnvService } from '../config/env.service.js';
 import { PrismaClient } from '../generated/prisma/client.js';
 
 @Injectable()
@@ -7,13 +8,8 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  constructor() {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      throw new Error('DATABASE_URL environment variable is required');
-    }
-
-    const adapter = new PrismaNeon({ connectionString });
+  constructor(env: EnvService) {
+    const adapter = new PrismaNeon({ connectionString: env.databaseUrl });
     super({ adapter });
   }
 
@@ -26,7 +22,11 @@ export class PrismaService
   }
 
   async isHealthy(): Promise<boolean> {
-    await this.$queryRaw`SELECT 1`;
-    return true;
+    try {
+      await this.$queryRaw`SELECT 1`;
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import { getServerEnv } from "./lib/env.ts";
+
+// Fail fast on malformed client/server environment variables during dev, build, and start.
+const serverEnv = getServerEnv();
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -14,12 +18,10 @@ const nextConfig: NextConfig = {
     },
   },
   async rewrites() {
-    const apiInternalUrl =
-      process.env.API_INTERNAL_URL ?? "http://localhost:3001";
     return [
       {
         source: "/api/:path*",
-        destination: `${apiInternalUrl}/api/:path*`,
+        destination: `${serverEnv.API_INTERNAL_URL}/api/:path*`,
       },
     ];
   },

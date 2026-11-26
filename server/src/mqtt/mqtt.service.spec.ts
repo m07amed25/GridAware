@@ -14,50 +14,53 @@ const mqttMock = vi.hoisted(() => {
 
 vi.mock('mqtt', () => ({ connect: mqttMock.connect }));
 
+import { validateServerEnv } from '../config/env.schema.js';
+import { EnvService } from '../config/env.service.js';
 import { MqttService } from './mqtt.service.js';
 
+function createTestEnv(overrides: NodeJS.ProcessEnv = {}): EnvService {
+  return new EnvService(
+    validateServerEnv({
+      DATABASE_URL: 'postgresql://user:pass@localhost:5432/gridaware',
+      REDIS_URL: 'redis://localhost:6379',
+      MQTT_URL: 'mqtt://localhost:1883',
+      ...overrides,
+    }),
+  );
+}
+
 describe('MqttService', () => {
-  const originalUrl = process.env.MQTT_URL;
   const client = mqttMock.client;
 
   beforeEach(() => {
-    process.env.MQTT_URL = 'mqtt://localhost:1883';
     client.connected = false;
     client.endAsync.mockResolvedValue(undefined);
     client.publishAsync.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    if (originalUrl === undefined) {
-      delete process.env.MQTT_URL;
-    } else {
-      process.env.MQTT_URL = originalUrl;
-    }
     vi.clearAllMocks();
   });
 
-  it('throws when MQTT_URL is not configured', () => {
-    delete process.env.MQTT_URL;
-    expect(() => new MqttService()).toThrow(
-      'MQTT_URL environment variable is required',
+  it('connects to MQTT_URL with a unique server client id and optional credentials on init', () => {
+    const service = new MqttService(
+      createTestEnv({ MQTT_USERNAME: 'api', MQTT_PASSWORD: 'secret' }),
     );
-  });
-
-  it('connects to MQTT_URL with a unique server client id on init', () => {
-    const service = new MqttService();
     service.onModuleInit();
 
     expect(mqttMock.connect).toHaveBeenCalledWith(
       'mqtt://localhost:1883',
       expect.objectContaining({
         clientId: expect.stringMatching(/^gridaware-server-/),
+        username: 'api',
+        password: 'secret',
         reconnectPeriod: 5_000,
       }),
     );
   });
 
   it('reflects broker connection state in isHealthy', () => {
-    const service = new MqttService();
+    const service = new MqttService(createTestEnv());
     expect(service.isHealthy()).toBe(false);
 
     service.onModuleInit();
@@ -68,7 +71,7 @@ describe('MqttService', () => {
   });
 
   it('serializes object payloads as JSON with QoS 1 by default', async () => {
-    const service = new MqttService();
+    const service = new MqttService(createTestEnv());
     service.onModuleInit();
 
     await service.publish('gridaware/test', { a: 1 });
@@ -81,21 +84,21 @@ describe('MqttService', () => {
   });
 
   it('throws when publishing before init', async () => {
-    const service = new MqttService();
+    const service = new MqttService(createTestEnv());
     await expect(service.publish('t', 'x')).rejects.toThrow(
       'MQTT client is not initialized',
     );
   });
 
   it('ends the client on destroy', async () => {
-    const service = new MqttService();
+    const service = new MqttService(createTestEnv());
     service.onModuleInit();
     await service.onModuleDestroy();
     expect(client.endAsync).toHaveBeenCalledTimes(1);
   });
 
   it('subscribes registered filters once the client is created', () => {
-    const service = new MqttService();
+    const service = new MqttService(createTestEnv());
     service.subscribe('a/+/c', vi.fn());
     expect(client.subscribe).not.toHaveBeenCalled();
 
@@ -115,7 +118,7 @@ describe('MqttService', () => {
   });
 
   it('dispatches incoming messages to matching handlers only', async () => {
-    const service = new MqttService();
+    const service = new MqttService(createTestEnv());
     const matching = vi.fn();
     const other = vi.fn();
     service.subscribe('$share/g/a/+/c', matching);

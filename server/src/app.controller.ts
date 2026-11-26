@@ -9,13 +9,4 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
-
-  @Get('health')
-  getHealth(): { status: 'ok'; service: string; timestamp: string } {
-    return {
-      status: 'ok',
-      service: 'gridaware-server',
-      timestamp: new Date().toISOString(),
-    };
-  }
 }

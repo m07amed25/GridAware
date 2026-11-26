@@ -5,6 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { Redis } from 'ioredis';
+import { EnvService } from '../config/env.service.js';
 
 /**
  * Shared Redis connection (cache, rate limiting, and later BullMQ queues).
@@ -18,13 +19,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
   readonly client: Redis;
 
-  constructor() {
-    const url = process.env.REDIS_URL;
-    if (!url) {
-      throw new Error('REDIS_URL environment variable is required');
-    }
-
-    this.client = new Redis(url, {
+  constructor(env: EnvService) {
+    this.client = new Redis(env.redisUrl, {
       lazyConnect: true,
       connectionName: 'gridaware-server',
     });

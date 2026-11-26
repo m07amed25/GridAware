@@ -11,6 +11,7 @@ import {
   type IClientSubscribeOptions,
   type MqttClient,
 } from 'mqtt';
+import { EnvService } from '../config/env.service.js';
 import { topicMatches } from './topic-match.js';
 
 export type MqttMessageHandler = (
@@ -37,17 +38,10 @@ interface Subscription {
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MqttService.name);
-  private readonly url: string;
   private readonly subscriptions: Subscription[] = [];
   private mqttClient?: MqttClient;
 
-  constructor() {
-    const url = process.env.MQTT_URL;
-    if (!url) {
-      throw new Error('MQTT_URL environment variable is required');
-    }
-    this.url = url;
-  }
+  constructor(private readonly env: EnvService) {}
 
   get client(): MqttClient {
     if (!this.mqttClient) {
@@ -57,10 +51,10 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit(): void {
-    const client = connect(this.url, {
+    const client = connect(this.env.mqttUrl, {
       clientId: `gridaware-server-${randomUUID().slice(0, 8)}`,
-      username: process.env.MQTT_USERNAME || undefined,
-      password: process.env.MQTT_PASSWORD || undefined,
+      username: this.env.mqttUsername,
+      password: this.env.mqttPassword,
       protocolVersion: 5,
       clean: true,
       connectTimeout: 10_000,
