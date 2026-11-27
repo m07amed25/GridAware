@@ -39,19 +39,44 @@ describe("Frontend authorization capability helpers", () => {
     ]);
   });
 
-  it("filters organization navigation items by role capabilities", () => {
-    const ownerPerms = new Set(["organization:read", "members:read"]);
-    const viewerPerms = new Set(["organization:read", "assets:read"]);
+  it("filters organization navigation items by role capabilities including Sites & Buildings (sites:read)", () => {
+    const ownerPerms = new Set([
+      "organization:read",
+      "sites:read",
+      "members:read",
+    ]);
+    const fmPerms = new Set(["organization:read", "sites:read"]);
+    const engineerPerms = new Set(["organization:read", "sites:read"]);
+    const technicianPerms = new Set(["organization:read", "sites:read"]);
+    const viewerPerms = new Set([
+      "organization:read",
+      "sites:read",
+      "assets:read",
+    ]);
+    const noSitesPerms = new Set(["organization:read"]);
 
     const ownerNav = getVisibleOrgNavItems("org-1", ownerPerms);
+    const fmNav = getVisibleOrgNavItems("org-1", fmPerms);
+    const engineerNav = getVisibleOrgNavItems("org-1", engineerPerms);
+    const technicianNav = getVisibleOrgNavItems("org-1", technicianPerms);
     const viewerNav = getVisibleOrgNavItems("org-1", viewerPerms);
+    const noSitesNav = getVisibleOrgNavItems("org-1", noSitesPerms);
 
     assert.deepEqual(
       ownerNav.map((item) => item.id),
-      ["overview", "members", "roles", "settings"],
+      ["overview", "sites", "members", "roles", "settings"],
     );
+    for (const nav of [fmNav, engineerNav, technicianNav, viewerNav]) {
+      assert.deepEqual(
+        nav.map((item) => item.id),
+        ["overview", "sites", "settings"],
+      );
+      const sitesItem = nav.find((item) => item.id === "sites");
+      assert.equal(sitesItem?.label, "Sites & Buildings");
+      assert.equal(sitesItem?.href, "/app/organizations/org-1/sites");
+    }
     assert.deepEqual(
-      viewerNav.map((item) => item.id),
+      noSitesNav.map((item) => item.id),
       ["overview", "settings"],
     );
   });

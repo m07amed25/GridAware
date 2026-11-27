@@ -93,7 +93,7 @@ export class OrganizationDetailController {
 
   @Get()
   @RequirePermissions('organization:read')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiOperation({
     summary: 'Get organization profile and settings (requires organization:read)',
   })
@@ -107,7 +107,7 @@ export class OrganizationDetailController {
 
   @Patch()
   @RequirePermissions('organization:update')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiOperation({
     summary: 'Update organization name or timezone (requires organization:update — OWNER only)',
@@ -130,7 +130,7 @@ export class OrganizationDetailController {
   @Post('archive')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('organization:archive')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiOperation({
     summary: 'Archive the active organization (requires organization:archive — OWNER only)',
@@ -149,7 +149,7 @@ export class OrganizationDetailController {
 
   @Get('roles-matrix')
   @RequirePermissions('members:read')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiOperation({
     summary:
       'Return the authoritative 5-role permission matrix for administration reference (requires members:read)',

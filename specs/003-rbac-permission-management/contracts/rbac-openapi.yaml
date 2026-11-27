@@ -248,10 +248,11 @@ components:
       name: organizationId
       in: path
       required: true
-      description: Target organization UUID (never accepted from request body)
+      description: Target organization UUID or slug (never accepted from request body)
       schema:
         type: string
-        format: uuid
+        minLength: 2
+        maxLength: 80
     MembershipIdPath:
       name: membershipId
       in: path
@@ -394,9 +395,10 @@ components:
     AccessContextData:
       type: object
       additionalProperties: false
-      required: [organizationId, membershipId, role, permissions, policyVersion]
+      required: [organizationId, organizationSlug, membershipId, role, permissions, policyVersion]
       properties:
         organizationId: { type: string, format: uuid }
+        organizationSlug: { type: string, minLength: 2, maxLength: 80 }
         membershipId: { type: string, format: uuid }
         role: { $ref: '#/components/schemas/MembershipRole' }
         permissions:

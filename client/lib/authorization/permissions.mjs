@@ -90,6 +90,12 @@ export function getVisibleOrgNavItems(organizationId, permissions) {
       requiredPermissions: ["organization:read"],
     },
     {
+      id: "sites",
+      label: "Sites & Buildings",
+      href: `/app/organizations/${organizationId}/sites`,
+      requiredPermissions: ["sites:read"],
+    },
+    {
       id: "members",
       label: "Members & Roles",
       href: `/app/organizations/${organizationId}/members`,

@@ -6,12 +6,12 @@ async function OrganizationParamShell({
   params,
   children,
 }: {
-  params: Promise<{ organizationId: string }>;
+  params: Promise<{ organizationSlug: string }>;
   children: React.ReactNode;
 }) {
-  const { organizationId } = await params;
+  const { organizationSlug } = await params;
   return (
-    <OrganizationShell organizationId={organizationId}>
+    <OrganizationShell organizationId={organizationSlug}>
       {children}
     </OrganizationShell>
   );
@@ -21,7 +21,7 @@ export default function OrganizationLayout({
   params,
   children,
 }: {
-  params: Promise<{ organizationId: string }>;
+  params: Promise<{ organizationSlug: string }>;
   children: React.ReactNode;
 }) {
   return (

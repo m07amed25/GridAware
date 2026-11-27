@@ -15,6 +15,7 @@ import {
 import { listAccessibleOrganizations } from "@/lib/authorization/api";
 import { ROLE_LABELS } from "@/lib/authorization/permissions.mjs";
 import type { AccessibleOrganizationSummary } from "@/lib/authorization/types";
+import { orgOverviewPath } from "@/lib/navigation/location-urls.mjs";
 
 function extractActiveOrgId(pathname: string): string | null {
   const match = /^\/app\/organizations\/([^/]+)/.exec(pathname);
@@ -58,8 +59,13 @@ export function OrganizationSwitcher() {
     return null;
   }
 
+  const normalizedActiveOrg = activeOrgId?.toLowerCase() ?? null;
   const activeOrg =
-    organizations.find((org) => org.organizationId === activeOrgId) ?? null;
+    organizations.find(
+      (org) =>
+        org.slug.toLowerCase() === normalizedActiveOrg ||
+        org.organizationId === activeOrgId,
+    ) ?? null;
 
   return (
     <DropdownMenu>
@@ -92,14 +98,16 @@ export function OrganizationSwitcher() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {organizations.map((org) => {
-          const isCurrent = org.organizationId === activeOrgId;
+          const isCurrent =
+            org.slug.toLowerCase() === normalizedActiveOrg ||
+            org.organizationId === activeOrgId;
           return (
             <DropdownMenuItem
               key={org.organizationId}
               onSelect={() => {
                 // Always route to the safe organization landing page on switch
                 // so prior-tenant state and role-restricted subroutes are cleared.
-                router.push(`/app/organizations/${org.organizationId}`);
+                router.push(orgOverviewPath(org.slug));
               }}
               className="flex items-center justify-between gap-3"
             >

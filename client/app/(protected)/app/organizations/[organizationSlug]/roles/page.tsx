@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiClientError } from "@/lib/auth/client";
 import { getOrganizationRolesMatrix } from "@/lib/authorization/api";
 import type { RolesMatrixData } from "@/lib/authorization/types";
+import { orgOverviewPath } from "@/lib/navigation/location-urls.mjs";
 
 interface MatrixState {
   organizationId: string;
@@ -25,7 +26,8 @@ interface MatrixState {
 }
 
 export default function OrganizationRolesMatrixPage() {
-  const { organizationId, loading: ctxLoading, can } = useAccessContext();
+  const { organizationId, organizationSlug, loading: ctxLoading, can } =
+    useAccessContext();
   const canRead = !ctxLoading && can("members:read");
   const [state, setState] = useState<MatrixState | null>(null);
 
@@ -72,7 +74,7 @@ export default function OrganizationRolesMatrixPage() {
     return (
       <PermissionDeniedState
         variant="forbidden"
-        backHref={`/app/organizations/${organizationId}`}
+        backHref={orgOverviewPath(organizationSlug)}
         backLabel="Back to organization overview"
         title="Permissions matrix is restricted to Owners"
         description="Only active Organization Owners can inspect the full organization role-to-permission policy matrix."

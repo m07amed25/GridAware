@@ -16,9 +16,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { orgOverviewPath } from "@/lib/navigation/location-urls.mjs";
 
 export default function OrganizationOverviewPage() {
-  const { organizationId, accessContext, loading, isReadOnly } =
+  const { organizationId, organizationSlug, accessContext, loading, isReadOnly } =
     useAccessContext();
 
   if (loading) {
@@ -48,7 +49,7 @@ export default function OrganizationOverviewPage() {
             Organization access overview
           </h1>
           <p className="font-mono text-xs text-[var(--text-muted)]">
-            Org ID: {organizationId} · Policy v{accessContext.policyVersion}
+            Slug: {organizationSlug} · Org ID: {organizationId} · Policy v{accessContext.policyVersion}
           </p>
         </div>
         <RoleBadge role={accessContext.role} showReadOnlyHint />
@@ -119,7 +120,7 @@ export default function OrganizationOverviewPage() {
             </CardHeader>
             <CardContent>
               <Button asChild>
-                <Link href={`/app/organizations/${organizationId}/members`}>
+                <Link href={`${orgOverviewPath(organizationSlug)}/members`}>
                   <span>Manage members</span>
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>

@@ -1,0 +1,787 @@
+openapi: 3.1.0
+info:
+  title: GridAware Phase 5.4 — Sites & Buildings Management API
+  version: 1.0.0
+  description: >-
+    Versioned REST contract for Phase 5.4 Sites & Buildings Management under
+    /api/v1. All endpoints require authenticated HttpOnly session cookies
+    (ga_access), server-verified active organization membership via
+    OrganizationContextGuard, and Phase 5.3 sites:* / buildings:* permissions.
+    All mutating endpoints additionally enforce double-submit CSRF protection
+    (ga_csrf cookie + X-CSRF-Token header). Cross-tenant and wrong-site
+    lookups return non-disclosing 404 errors (SITE_NOT_FOUND or
+    BUILDING_NOT_FOUND). Archived record views (includeArchived=true) strictly
+    require sites:archive or buildings:archive permissions.
+servers:
+  - url: http://localhost:3001/api/v1
+    description: Local NestJS server
+  - url: http://localhost:3000/api/v1
+    description: Next.js same-origin /api rewrite proxy
+tags:
+  - name: Sites
+    description: Organization-scoped Site lifecycle and metadata management
+  - name: Buildings
+    description: Site-scoped Building lifecycle and metadata management
+
+paths:
+  /organizations/{organizationId}/sites:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+    get:
+      tags: [Sites]
+      operationId: listSites
+      summary: List sites belonging to the active organization (requires sites:read; includeArchived=true also requires sites:archive)
+      security:
+        - accessCookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CursorQuery'
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/SearchQuery'
+        - $ref: '#/components/parameters/StatusFilterQuery'
+        - $ref: '#/components/parameters/SortQuery'
+        - $ref: '#/components/parameters/DirectionQuery'
+        - $ref: '#/components/parameters/IncludeArchivedQuery'
+      responses:
+        '200':
+          description: Paginated list of sites in the active organization
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SiteListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/OrganizationNotFound' }
+    post:
+      tags: [Sites]
+      operationId: createSite
+      summary: Create a site under the active organization (requires sites:create)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSiteRequest' }
+      responses:
+        '201':
+          description: Site created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SiteResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/OrganizationNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+    get:
+      tags: [Sites]
+      operationId: getSite
+      summary: Retrieve one site in the active organization (requires sites:read; includeArchived=true also requires sites:archive)
+      security:
+        - accessCookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IncludeArchivedQuery'
+      responses:
+        '200':
+          description: Site details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SiteResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SiteNotFound' }
+    patch:
+      tags: [Sites]
+      operationId: updateSite
+      summary: Update editable metadata of a non-archived site (requires sites:update)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateSiteRequest' }
+      responses:
+        '200':
+          description: Site updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SiteResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SiteNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}/activate:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+    post:
+      tags: [Sites]
+      operationId: activateSite
+      summary: Activate an inactive non-archived site (requires sites:update)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      responses:
+        '200':
+          description: Site activated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SiteResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SiteNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+    post:
+      tags: [Sites]
+      operationId: deactivateSite
+      summary: Deactivate an active non-archived site without archiving child buildings (requires sites:update)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      responses:
+        '200':
+          description: Site deactivated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SiteResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SiteNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}/archive:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+    post:
+      tags: [Sites]
+      operationId: archiveSite
+      summary: Non-destructively archive a site when zero non-archived buildings remain (requires sites:archive)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      responses:
+        '200':
+          description: Site archived
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SiteResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SiteNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}/restore:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+    post:
+      tags: [Sites]
+      operationId: restoreSite
+      summary: Restore an archived site in an active organization (requires sites:archive)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      responses:
+        '200':
+          description: Site restored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SiteResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SiteNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}/buildings:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+    get:
+      tags: [Buildings]
+      operationId: listBuildings
+      summary: List buildings under a verified site in the active organization (requires buildings:read; includeArchived=true also requires buildings:archive)
+      security:
+        - accessCookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CursorQuery'
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/SearchQuery'
+        - $ref: '#/components/parameters/StatusFilterQuery'
+        - $ref: '#/components/parameters/SortQuery'
+        - $ref: '#/components/parameters/DirectionQuery'
+        - $ref: '#/components/parameters/IncludeArchivedQuery'
+      responses:
+        '200':
+          description: Paginated list of buildings in the specified site
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildingListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SiteNotFound' }
+    post:
+      tags: [Buildings]
+      operationId: createBuilding
+      summary: Create a building under an active non-archived site (requires buildings:create)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateBuildingRequest' }
+      responses:
+        '201':
+          description: Building created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildingResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/SiteNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}/buildings/{buildingId}:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+      - $ref: '#/components/parameters/BuildingIdPath'
+    get:
+      tags: [Buildings]
+      operationId: getBuilding
+      summary: Retrieve one building scoped by buildingId, siteId, and organizationId (requires buildings:read; includeArchived=true also requires buildings:archive)
+      security:
+        - accessCookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IncludeArchivedQuery'
+      responses:
+        '200':
+          description: Building details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildingResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/BuildingNotFound' }
+    patch:
+      tags: [Buildings]
+      operationId: updateBuilding
+      summary: Update editable metadata of a non-archived building (requires buildings:update)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateBuildingRequest' }
+      responses:
+        '200':
+          description: Building updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildingResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/BuildingNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}/buildings/{buildingId}/activate:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+      - $ref: '#/components/parameters/BuildingIdPath'
+    post:
+      tags: [Buildings]
+      operationId: activateBuilding
+      summary: Activate an inactive non-archived building (requires buildings:update)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      responses:
+        '200':
+          description: Building activated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildingResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/BuildingNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}/buildings/{buildingId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+      - $ref: '#/components/parameters/BuildingIdPath'
+    post:
+      tags: [Buildings]
+      operationId: deactivateBuilding
+      summary: Deactivate an active non-archived building (requires buildings:update)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      responses:
+        '200':
+          description: Building deactivated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildingResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/BuildingNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}/buildings/{buildingId}/archive:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+      - $ref: '#/components/parameters/BuildingIdPath'
+    post:
+      tags: [Buildings]
+      operationId: archiveBuilding
+      summary: Non-destructively archive a building (requires buildings:archive)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      responses:
+        '200':
+          description: Building archived
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildingResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/BuildingNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+  /organizations/{organizationId}/sites/{siteId}/buildings/{buildingId}/restore:
+    parameters:
+      - $ref: '#/components/parameters/OrganizationIdPath'
+      - $ref: '#/components/parameters/SiteIdPath'
+      - $ref: '#/components/parameters/BuildingIdPath'
+    post:
+      tags: [Buildings]
+      operationId: restoreBuilding
+      summary: Restore an archived building when its parent site is non-archived and ACTIVE (requires buildings:archive)
+      security:
+        - accessCookieAuth: []
+          csrfHeaderAuth: []
+      responses:
+        '200':
+          description: Building restored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildingResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/BuildingNotFound' }
+        '409': { $ref: '#/components/responses/ConflictError' }
+
+components:
+  securitySchemes:
+    accessCookieAuth:
+      type: apiKey
+      in: cookie
+      name: ga_access
+    csrfHeaderAuth:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+
+  parameters:
+    OrganizationIdPath:
+      name: organizationId
+      in: path
+      required: true
+      description: Organization UUID or slug
+      schema: { type: string, minLength: 2, maxLength: 80 }
+    SiteIdPath:
+      name: siteId
+      in: path
+      required: true
+      description: Site UUID or code
+      schema: { type: string, minLength: 2, maxLength: 36 }
+    BuildingIdPath:
+      name: buildingId
+      in: path
+      required: true
+      description: Building UUID or code
+      schema: { type: string, minLength: 2, maxLength: 36 }
+    CursorQuery:
+      name: cursor
+      in: query
+      required: false
+      schema: { type: string, minLength: 1, maxLength: 512 }
+    LimitQuery:
+      name: limit
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    SearchQuery:
+      name: q
+      in: query
+      required: false
+      schema: { type: string, maxLength: 120 }
+    StatusFilterQuery:
+      name: status
+      in: query
+      required: false
+      schema: { $ref: '#/components/schemas/LocationStatus' }
+    SortQuery:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [createdAt, name, code]
+        default: createdAt
+    DirectionQuery:
+      name: direction
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+    IncludeArchivedQuery:
+      name: includeArchived
+      in: query
+      required: false
+      schema: { type: boolean, default: false }
+
+  responses:
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Unauthenticated:
+      description: Missing or invalid authentication session
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Forbidden:
+      description: Authenticated active member lacks required permission
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    OrganizationNotFound:
+      description: Non-disclosing 404 for unknown, inactive, or unjoined organization
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    SiteNotFound:
+      description: Non-disclosing 404 (SITE_NOT_FOUND) for unknown, archived (unless authorized), or cross-tenant site
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    BuildingNotFound:
+      description: Non-disclosing 404 (BUILDING_NOT_FOUND) for unknown, wrong-site, archived (unless authorized), or cross-tenant building
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    ConflictError:
+      description: Conflict (duplicate code, SITE_HAS_ACTIVE_BUILDINGS, SITE_ARCHIVED, SITE_INACTIVE, or INVALID_LOCATION_STATE)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  schemas:
+    SiteType:
+      type: string
+      enum:
+        - FACTORY
+        - INDUSTRIAL_FACILITY
+        - COMMERCIAL_COMPLEX
+        - COMMERCIAL_PROPERTY
+        - CAMPUS
+        - WAREHOUSE_CAMPUS
+        - OTHER
+
+    BuildingType:
+      type: string
+      enum:
+        - PRODUCTION
+        - OFFICE
+        - WAREHOUSE
+        - UTILITY
+        - RETAIL
+        - PLANT_ROOM
+        - PARKING
+        - OTHER
+
+    LocationStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+
+    ApiResponseMeta:
+      type: object
+      additionalProperties: false
+      required: [requestId, servedAt]
+      properties:
+        requestId: { type: string }
+        servedAt: { type: string, format: date-time }
+
+    PaginationMeta:
+      type: object
+      additionalProperties: false
+      required: [nextCursor, hasMore, limit]
+      properties:
+        nextCursor: { type: ['string', 'null'] }
+        hasMore: { type: boolean }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+
+    PaginatedApiResponseMeta:
+      type: object
+      additionalProperties: false
+      required: [requestId, servedAt, pagination]
+      properties:
+        requestId: { type: string }
+        servedAt: { type: string, format: date-time }
+        pagination: { $ref: '#/components/schemas/PaginationMeta' }
+
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        field: { type: string }
+        code: { type: string }
+        message: { type: string }
+
+    ProblemDetails:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, code, detail, instance, requestId]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - UNAUTHENTICATED
+            - FORBIDDEN
+            - CSRF_INVALID
+            - RESOURCE_NOT_FOUND
+            - SITE_NOT_FOUND
+            - BUILDING_NOT_FOUND
+            - SITE_CODE_ALREADY_EXISTS
+            - BUILDING_CODE_ALREADY_EXISTS
+            - SITE_ARCHIVED
+            - SITE_INACTIVE
+            - SITE_HAS_ACTIVE_BUILDINGS
+            - INVALID_LOCATION_STATE
+            - INTERNAL_ERROR
+        detail: { type: string }
+        instance: { type: string }
+        requestId: { type: string }
+        errors:
+          type: array
+          items: { $ref: '#/components/schemas/FieldError' }
+
+    SiteDto:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - organizationId
+        - code
+        - name
+        - type
+        - description
+        - addressLine1
+        - addressLine2
+        - city
+        - region
+        - postalCode
+        - countryCode
+        - latitude
+        - longitude
+        - timeZone
+        - status
+        - archivedAt
+        - buildingCount
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid }
+        code: { type: string, minLength: 2, maxLength: 32 }
+        name: { type: string, minLength: 2, maxLength: 120 }
+        type: { $ref: '#/components/schemas/SiteType' }
+        description: { type: ['string', 'null'], maxLength: 2000 }
+        addressLine1: { type: ['string', 'null'], maxLength: 200 }
+        addressLine2: { type: ['string', 'null'], maxLength: 200 }
+        city: { type: ['string', 'null'], maxLength: 200 }
+        region: { type: ['string', 'null'], maxLength: 200 }
+        postalCode: { type: ['string', 'null'], maxLength: 32 }
+        countryCode: { type: ['string', 'null'], pattern: '^[A-Z]{2}$' }
+        latitude: { type: ['number', 'null'], minimum: -90, maximum: 90 }
+        longitude: { type: ['number', 'null'], minimum: -180, maximum: 180 }
+        timeZone: { type: string, maxLength: 64 }
+        status: { $ref: '#/components/schemas/LocationStatus' }
+        archivedAt: { type: ['string', 'null'], format: date-time }
+        buildingCount: { type: integer, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateSiteRequest:
+      type: object
+      additionalProperties: false
+      required: [code, name, type]
+      properties:
+        code: { type: string, minLength: 2, maxLength: 32 }
+        name: { type: string, minLength: 2, maxLength: 120 }
+        type: { $ref: '#/components/schemas/SiteType' }
+        description: { type: ['string', 'null'], maxLength: 2000 }
+        addressLine1: { type: ['string', 'null'], maxLength: 200 }
+        addressLine2: { type: ['string', 'null'], maxLength: 200 }
+        city: { type: ['string', 'null'], maxLength: 200 }
+        region: { type: ['string', 'null'], maxLength: 200 }
+        postalCode: { type: ['string', 'null'], maxLength: 32 }
+        countryCode: { type: ['string', 'null'], maxLength: 2 }
+        latitude: { type: ['number', 'null'], minimum: -90, maximum: 90 }
+        longitude: { type: ['number', 'null'], minimum: -180, maximum: 180 }
+        timeZone: { type: string, maxLength: 64, default: UTC }
+
+    UpdateSiteRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        type: { $ref: '#/components/schemas/SiteType' }
+        description: { type: ['string', 'null'], maxLength: 2000 }
+        addressLine1: { type: ['string', 'null'], maxLength: 200 }
+        addressLine2: { type: ['string', 'null'], maxLength: 200 }
+        city: { type: ['string', 'null'], maxLength: 200 }
+        region: { type: ['string', 'null'], maxLength: 200 }
+        postalCode: { type: ['string', 'null'], maxLength: 32 }
+        countryCode: { type: ['string', 'null'], maxLength: 2 }
+        latitude: { type: ['number', 'null'], minimum: -90, maximum: 90 }
+        longitude: { type: ['number', 'null'], minimum: -180, maximum: 180 }
+        timeZone: { type: string, maxLength: 64 }
+
+    BuildingDto:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - organizationId
+        - siteId
+        - code
+        - name
+        - type
+        - description
+        - floorCount
+        - grossAreaSqM
+        - status
+        - archivedAt
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid }
+        siteId: { type: string, format: uuid }
+        code: { type: string, minLength: 2, maxLength: 32 }
+        name: { type: string, minLength: 2, maxLength: 120 }
+        type: { $ref: '#/components/schemas/BuildingType' }
+        description: { type: ['string', 'null'], maxLength: 2000 }
+        floorCount: { type: ['integer', 'null'], minimum: 1, maximum: 200 }
+        grossAreaSqM:
+          type: ['string', 'null']
+          pattern: '^(?:0|[1-9][0-9]{0,9})\.[0-9]{2}$'
+        status: { $ref: '#/components/schemas/LocationStatus' }
+        archivedAt: { type: ['string', 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateBuildingRequest:
+      type: object
+      additionalProperties: false
+      required: [code, name, type]
+      properties:
+        code: { type: string, minLength: 2, maxLength: 32 }
+        name: { type: string, minLength: 2, maxLength: 120 }
+        type: { $ref: '#/components/schemas/BuildingType' }
+        description: { type: ['string', 'null'], maxLength: 2000 }
+        floorCount: { type: ['integer', 'null'], minimum: 1, maximum: 200 }
+        grossAreaSqM:
+          type: ['string', 'null']
+          pattern: '^(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,2})?$'
+
+    UpdateBuildingRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        type: { $ref: '#/components/schemas/BuildingType' }
+        description: { type: ['string', 'null'], maxLength: 2000 }
+        floorCount: { type: ['integer', 'null'], minimum: 1, maximum: 200 }
+        grossAreaSqM:
+          type: ['string', 'null']
+          pattern: '^(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,2})?$'
+
+    SiteResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/SiteDto' }
+        meta: { $ref: '#/components/schemas/ApiResponseMeta' }
+
+    SiteListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/SiteDto' }
+        meta: { $ref: '#/components/schemas/PaginatedApiResponseMeta' }
+
+    BuildingResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/BuildingDto' }
+        meta: { $ref: '#/components/schemas/ApiResponseMeta' }
+
+    BuildingListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/BuildingDto' }
+        meta: { $ref: '#/components/schemas/PaginatedApiResponseMeta' }

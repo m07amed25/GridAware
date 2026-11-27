@@ -27,6 +27,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "prisma:validate": "prisma validate",
+    "seed:demo-locations": "node --experimental-strip-types prisma/seed-demo-locations.ts",
     "simulate": "nest build && node dist/simulator/run-simulator.js"
   },
   "dependencies": {

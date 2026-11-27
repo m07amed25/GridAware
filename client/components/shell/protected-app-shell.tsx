@@ -9,8 +9,7 @@ import React, {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
-  type MouseEvent,
+  useSyncExternalStore,
 } from "react";
 import {
   Building2,
@@ -32,6 +31,10 @@ import {
 } from "@/components/authorization/access-context-provider";
 import { OrganizationSwitcher } from "@/components/authorization/organization-switcher";
 import { RoleBadge } from "@/components/authorization/role-badge";
+import {
+  AnimatedSidebar,
+  type AnimatedSidebarGroup,
+} from "@/components/ui/animated-sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -41,11 +44,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  LiquidGlassExpandableSidebar,
-  type GlassNavGroup,
-  type GlassNavItem,
-} from "@/components/ui/liquid-glass-expandable-sidebar";
 import { apiRequest, broadcastSessionInvalidated } from "@/lib/auth/client";
 import type { SafeUserProfile } from "@/lib/auth/types";
 import { listAccessibleOrganizations } from "@/lib/authorization/api";
@@ -56,6 +54,44 @@ import {
   getUserInitials,
   resolveActiveSidebarId,
 } from "@/lib/navigation/shell-nav.mjs";
+
+const SIDEBAR_STORAGE_KEY = "gridaware.sidebar.expanded";
+const SIDEBAR_STORAGE_EVENT = "gridaware:sidebar-expanded-change";
+
+function subscribeSidebarExpanded(onStoreChange: () => void) {
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === SIDEBAR_STORAGE_KEY) {
+      onStoreChange();
+    }
+  };
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(SIDEBAR_STORAGE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(SIDEBAR_STORAGE_EVENT, onStoreChange);
+  };
+}
+
+function getSidebarExpandedSnapshot(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
+function getSidebarExpandedServerSnapshot(): boolean {
+  return true;
+}
+
+function writeSidebarExpanded(expanded: boolean) {
+  try {
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(expanded));
+  } catch {
+    // Ignore storage write failures (private mode / quota restrictions)
+  }
+  window.dispatchEvent(new Event(SIDEBAR_STORAGE_EVENT));
+}
 
 const NAV_ICON_BY_KEY: Record<ShellNavIconKey, React.ReactNode> = {
   "workspace-overview": <LayoutDashboard aria-hidden="true" />,
@@ -74,20 +110,10 @@ function resolveNavIcon(iconKey: string): React.ReactNode {
   return <LayoutDashboard aria-hidden="true" />;
 }
 
-const SIDEBAR_GLASS = {
-  blur: 6,
-  opacity: 0.14,
-  saturation: 1.2,
-  edge: 0.55,
-  distortion: 14,
-} as const;
-
-const SIDEBAR_STYLE = {
-  "--gn-sidebar-inset": "24px",
-} as CSSProperties;
-
 interface OrgNameSnapshot {
-  orgId: string;
+  orgRef: string;
+  orgId: string | null;
+  orgSlug: string | null;
   name: string | null;
 }
 
@@ -122,9 +148,21 @@ function ProtectedShellInner({
 
   const [orgNameSnapshot, setOrgNameSnapshot] =
     useState<OrgNameSnapshot | null>(null);
+  const orgNameSnapshotRef = useRef<OrgNameSnapshot | null>(null);
 
   useEffect(() => {
     if (!activeOrgId) {
+      return;
+    }
+
+    const normalizedActive = activeOrgId.toLowerCase();
+    const cached = orgNameSnapshotRef.current;
+    if (
+      cached &&
+      (cached.orgRef.toLowerCase() === normalizedActive ||
+        cached.orgId === activeOrgId ||
+        cached.orgSlug?.toLowerCase() === normalizedActive)
+    ) {
       return;
     }
 
@@ -133,19 +171,29 @@ function ProtectedShellInner({
       .then((res) => {
         if (cancelled) return;
         const match = res.data.find(
-          (org) => org.organizationId === activeOrgId,
+          (org) =>
+            org.slug.toLowerCase() === normalizedActive ||
+            org.organizationId === activeOrgId,
         );
-        setOrgNameSnapshot({
-          orgId: activeOrgId,
+        const next: OrgNameSnapshot = {
+          orgRef: activeOrgId,
+          orgId: match?.organizationId ?? null,
+          orgSlug: match?.slug ?? null,
           name: match?.name ?? null,
-        });
+        };
+        orgNameSnapshotRef.current = next;
+        setOrgNameSnapshot(next);
       })
       .catch(() => {
         if (cancelled) return;
-        setOrgNameSnapshot({
-          orgId: activeOrgId,
+        const next: OrgNameSnapshot = {
+          orgRef: activeOrgId,
+          orgId: null,
+          orgSlug: null,
           name: null,
-        });
+        };
+        orgNameSnapshotRef.current = next;
+        setOrgNameSnapshot(next);
       });
 
     return () => {
@@ -153,8 +201,13 @@ function ProtectedShellInner({
     };
   }, [activeOrgId]);
 
+  const normalizedActiveOrgId = activeOrgId?.toLowerCase() ?? null;
   const activeOrgName =
-    activeOrgId && orgNameSnapshot?.orgId === activeOrgId
+    activeOrgId &&
+    orgNameSnapshot &&
+    (orgNameSnapshot.orgRef.toLowerCase() === normalizedActiveOrgId ||
+      orgNameSnapshot.orgId === activeOrgId ||
+      orgNameSnapshot.orgSlug?.toLowerCase() === normalizedActiveOrgId)
       ? orgNameSnapshot.name
       : null;
 
@@ -185,14 +238,19 @@ function ProtectedShellInner({
     };
   }, [mobileOpen, closeMobileDrawer]);
 
-  const groups = useMemo<GlassNavGroup[]>(() => {
+  const groups = useMemo<AnimatedSidebarGroup[]>(() => {
     const permissions =
       orgAccess && !orgAccess.loading && orgAccess.accessContext
         ? orgAccess.permissions
         : null;
+    const navOrgSlug =
+      orgAccess?.accessContext?.organizationSlug &&
+      orgAccess.accessContext.organizationSlug.length > 0
+        ? orgAccess.accessContext.organizationSlug
+        : activeOrgId;
 
     return buildShellNavGroups({
-      activeOrgId,
+      activeOrgId: navOrgSlug,
       activeOrgName,
       permissions,
     }).map((group) => ({
@@ -212,13 +270,26 @@ function ProtectedShellInner({
     [user.displayName],
   );
 
-  const brandIcon = useMemo(
+  const expandedBrand = useMemo(
+    () => (
+      <Image
+        src="/brand/gridaware-horizontal-dark.svg"
+        alt="GridAware"
+        width={161}
+        height={40}
+        priority
+      />
+    ),
+    [],
+  );
+
+  const collapsedBrand = useMemo(
     () => (
       <Image
         src="/brand/gridaware-symbol-small-dark.svg"
         alt=""
-        width={22}
-        height={22}
+        width={28}
+        height={28}
         priority
       />
     ),
@@ -236,14 +307,9 @@ function ProtectedShellInner({
     [user.displayName, user.email, userInitials],
   );
 
-  const handleNavigate = useCallback(
-    (item: GlassNavItem, event: MouseEvent<HTMLAnchorElement>) => {
-      event.preventDefault();
-      setMobileOpen(false);
-      router.push(item.href);
-    },
-    [router],
-  );
+  const handleMobileItemClick = useCallback(() => {
+    setMobileOpen(false);
+  }, []);
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -269,27 +335,25 @@ function ProtectedShellInner({
       </a>
 
       <div className="flex min-h-svh bg-[var(--surface-canvas)] text-[var(--text-primary)]">
-        <aside className="hidden lg:block lg:shrink-0 lg:sticky lg:top-0 lg:h-svh lg:p-3">
-          <LiquidGlassExpandableSidebar
+        <aside className="hidden lg:sticky lg:top-0 lg:block lg:h-svh lg:shrink-0">
+          <AnimatedSidebar
             groups={groups}
             activeId={activeId}
-            brand="GridAware"
-            brandDetail={activeOrgName ?? "Monitoring workspace"}
-            brandIcon={brandIcon}
-            account={sidebarAccount}
             expanded={desktopExpanded}
             onExpandedChange={onDesktopExpandedChange}
-            onNavigate={handleNavigate}
-            selectionLight={0.9}
-            glass={SIDEBAR_GLASS}
-            style={SIDEBAR_STYLE}
+            brand={expandedBrand}
+            collapsedBrand={collapsedBrand}
+            brandHref="/app"
+            brandLabel="GridAware Dashboard"
+            account={sidebarAccount}
+            ariaLabel="GridAware navigation"
           />
         </aside>
 
         {mobileOpen ? (
           <>
             <div
-              className="fixed inset-0 z-40 bg-black/65 backdrop-blur-[2px] lg:hidden"
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-[2px] lg:hidden"
               aria-hidden="true"
               onClick={() => closeMobileDrawer(true)}
             />
@@ -297,28 +361,28 @@ function ProtectedShellInner({
               role="dialog"
               aria-modal="true"
               aria-label="Navigation menu"
-              className="fixed inset-y-0 start-0 z-50 flex items-start p-3 lg:hidden"
+              className="fixed inset-y-0 start-0 z-50 flex lg:hidden"
             >
-              <LiquidGlassExpandableSidebar
+              <AnimatedSidebar
                 groups={groups}
                 activeId={activeId}
-                brand="GridAware"
-                brandDetail={activeOrgName ?? "Monitoring workspace"}
-                brandIcon={brandIcon}
-                account={sidebarAccount}
                 expanded={true}
-                onExpandedChange={() => closeMobileDrawer(true)}
-                onNavigate={handleNavigate}
-                selectionLight={0.9}
-                glass={SIDEBAR_GLASS}
-                style={SIDEBAR_STYLE}
+                hideCollapseButton
+                onClose={() => closeMobileDrawer(true)}
+                onItemClick={handleMobileItemClick}
+                brand={expandedBrand}
+                collapsedBrand={collapsedBrand}
+                brandHref="/app"
+                brandLabel="GridAware Dashboard"
+                account={sidebarAccount}
+                ariaLabel="GridAware navigation"
               />
             </div>
           </>
         ) : null}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-1)]/90 px-4 backdrop-blur-md sm:px-6">
+          <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-1)]/95 px-4 backdrop-blur-md sm:px-6">
             <div className="flex min-w-0 items-center gap-2.5">
               <button
                 type="button"
@@ -432,7 +496,15 @@ export function ProtectedAppShell({
 }) {
   const pathname = usePathname();
   const activeOrgId = extractActiveOrgId(pathname);
-  const [desktopExpanded, setDesktopExpanded] = useState(true);
+  const desktopExpanded = useSyncExternalStore(
+    subscribeSidebarExpanded,
+    getSidebarExpandedSnapshot,
+    getSidebarExpandedServerSnapshot,
+  );
+
+  const handleDesktopExpandedChange = useCallback((expanded: boolean) => {
+    writeSidebarExpanded(expanded);
+  }, []);
 
   if (activeOrgId) {
     return (
@@ -442,7 +514,7 @@ export function ProtectedAppShell({
           pathname={pathname}
           activeOrgId={activeOrgId}
           desktopExpanded={desktopExpanded}
-          onDesktopExpandedChange={setDesktopExpanded}
+          onDesktopExpandedChange={handleDesktopExpandedChange}
         >
           {children}
         </ProtectedShellInner>
@@ -456,7 +528,7 @@ export function ProtectedAppShell({
       pathname={pathname}
       activeOrgId={null}
       desktopExpanded={desktopExpanded}
-      onDesktopExpandedChange={setDesktopExpanded}
+      onDesktopExpandedChange={handleDesktopExpandedChange}
     >
       {children}
     </ProtectedShellInner>

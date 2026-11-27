@@ -47,6 +47,7 @@ export class AuthorizationService {
   ): AccessContextPayload {
     return {
       organizationId: context.organizationId,
+      organizationSlug: context.organizationSlug ?? '',
       membershipId: context.membershipId,
       role: context.role,
       permissions: getPermissionListForRole(context.role),

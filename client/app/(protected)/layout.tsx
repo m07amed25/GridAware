@@ -23,35 +23,31 @@ function ProtectedShellSkeleton() {
       className="flex min-h-svh bg-[var(--surface-canvas)] text-[var(--text-primary)]"
       aria-busy="true"
     >
-      <aside className="hidden lg:block lg:shrink-0 lg:sticky lg:top-0 lg:h-svh lg:p-3">
-        <div className="flex h-[calc(100svh-24px)] w-[260px] flex-col rounded-[26px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3">
-          <div className="flex items-center justify-between gap-2 pb-3">
-            <div className="flex items-center gap-2.5">
-              <Skeleton className="h-[34px] w-[34px] rounded-[11px]" />
-              <div className="space-y-1.5">
-                <Skeleton className="h-3.5 w-20" />
-                <Skeleton className="h-2.5 w-28" />
+      <aside className="hidden lg:sticky lg:top-0 lg:block lg:h-svh lg:shrink-0">
+        <div className="flex h-full w-[248px] flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-1)]">
+          <div className="flex h-16 items-center border-b border-[var(--border-subtle)] px-5">
+            <Skeleton className="h-7 w-36 rounded-[var(--radius-sm)]" />
+          </div>
+          <div className="flex-1 space-y-2 p-3">
+            <Skeleton className="mb-2 h-3 w-20" />
+            <Skeleton className="h-11 w-full rounded-[var(--radius-md)]" />
+            <Skeleton className="h-11 w-full rounded-[var(--radius-md)]" />
+          </div>
+          <div className="space-y-1 border-t border-[var(--border-subtle)] p-3">
+            <div className="flex h-12 items-center gap-2.5 px-2">
+              <Skeleton className="size-8 rounded-full" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-2.5 w-32" />
               </div>
             </div>
-            <Skeleton className="h-9 w-9 rounded-[12px]" />
-          </div>
-          <Skeleton className="mb-3 h-11 w-full rounded-[13px]" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-11 w-full rounded-[15px]" />
-            <Skeleton className="h-11 w-full rounded-[15px]" />
-          </div>
-          <div className="mt-3 flex items-center gap-2.5 border-t border-[var(--border-subtle)] pt-3">
-            <Skeleton className="h-[34px] w-[34px] rounded-full" />
-            <div className="flex-1 space-y-1.5">
-              <Skeleton className="h-3.5 w-24" />
-              <Skeleton className="h-2.5 w-32" />
-            </div>
+            <Skeleton className="h-11 w-full rounded-[var(--radius-md)]" />
           </div>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-14 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-1)]/90 px-4 sm:px-6">
+        <div className="flex h-16 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-1)]/95 px-4 sm:px-6">
           <Skeleton className="h-9 w-40 rounded-[var(--radius-md)]" />
           <Skeleton className="h-9 w-36 rounded-[var(--radius-md)]" />
         </div>

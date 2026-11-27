@@ -27,6 +27,7 @@ import {
   previewInvitation,
 } from "@/lib/authorization/api";
 import type { InvitationPreview } from "@/lib/authorization/types";
+import { orgOverviewPath } from "@/lib/navigation/location-urls.mjs";
 
 function AcceptInvitationContent() {
   const router = useRouter();
@@ -74,7 +75,9 @@ function AcceptInvitationContent() {
     try {
       const res = await acceptInvitation(token);
       toast.success(`Joined ${res.data.organizationName}!`);
-      router.push(`/app/organizations/${res.data.organizationId}`);
+      router.push(
+        orgOverviewPath(res.data.organizationSlug || res.data.organizationId),
+      );
       router.refresh();
     } catch (error) {
       if (error instanceof ApiClientError && error.status === 401) {

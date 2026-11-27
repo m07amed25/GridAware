@@ -14,6 +14,10 @@ const rbacContractsPath = resolve(
   import.meta.dirname,
   '../../../specs/003-rbac-permission-management/contracts/rbac-openapi.yaml',
 );
+const sitesBuildingsContractsPath = resolve(
+  import.meta.dirname,
+  '../../../specs/004-sites-buildings-management/contracts/sites-buildings-openapi.yaml',
+);
 const schemasDir = resolve(contractsDir, 'schemas');
 const addFormats = addFormatsModule as unknown as (ajv: Ajv2020) => Ajv2020;
 
@@ -244,6 +248,67 @@ describe('docs/contracts machine-readable specifications', () => {
       expect(
         validate,
         `Failed to compile rbac-openapi component schema "${schemaName}"`,
+      ).toBeTypeOf('function');
+    }
+
+    const rbacParams = components['parameters'] as Record<string, unknown>;
+    const rbacOrgParam = rbacParams['OrganizationIdPath'] as {
+      schema?: { format?: string };
+    };
+    expect(rbacOrgParam.schema?.format).toBeUndefined();
+
+    const rbacAccessCtx = components['schemas']['AccessContextData'] as {
+      properties?: Record<string, unknown>;
+    };
+    expect(rbacAccessCtx.properties?.['organizationSlug']).toBeDefined();
+
+    const rootDoc = loadDocument(resolve(contractsDir, 'openapi.yaml')) as {
+      paths: Record<string, Record<string, { parameters?: Array<{ name?: string; in?: string; schema?: { format?: string } }> }>>;
+    };
+    for (const [pathKey, pathItem] of Object.entries(rootDoc.paths)) {
+      for (const [method, op] of Object.entries(pathItem)) {
+        if (!isRecord(op) || !Array.isArray(op.parameters)) continue;
+        for (const param of op.parameters) {
+          if (param.name === 'organizationId' && param.in === 'path') {
+            expect(
+              param.schema?.format,
+              `Inline organizationId path param on ${method.toUpperCase()} ${pathKey} should accept slugs (no format: uuid)`,
+            ).toBeUndefined();
+          }
+        }
+      }
+    }
+  });
+
+  it('validates Phase 5.4 sites-buildings-openapi.yaml structure, $refs, and component schemas', () => {
+    expect(existsSync(sitesBuildingsContractsPath)).toBe(true);
+    const doc = loadDocument(sitesBuildingsContractsPath);
+    expect(isRecord(doc)).toBe(true);
+    if (!isRecord(doc)) return;
+
+    expect(String(doc['openapi'])).toMatch(/^3\.1\./);
+    assertAllRefsResolve(doc, sitesBuildingsContractsPath);
+
+    const components = doc['components'];
+    expect(isRecord(components)).toBe(true);
+    if (!isRecord(components) || !isRecord(components['schemas'])) {
+      throw new Error(
+        'Expected components.schemas in sites-buildings-openapi.yaml',
+      );
+    }
+
+    const docUri =
+      'https://contracts.gridaware.internal/sites-buildings-openapi.yaml';
+    const ajv = addFormats(new Ajv2020({ strict: false, allErrors: true }));
+    ajv.addSchema(doc, docUri);
+
+    for (const schemaName of Object.keys(components['schemas'])) {
+      const validate = ajv.getSchema(
+        `${docUri}#/components/schemas/${schemaName}`,
+      );
+      expect(
+        validate,
+        `Failed to compile sites-buildings-openapi component schema "${schemaName}"`,
       ).toBeTypeOf('function');
     }
   });

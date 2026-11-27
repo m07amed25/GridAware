@@ -25,7 +25,7 @@ export class AuthorizationController {
 
   @Get('access-context')
   @AllowActiveMember()
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiOperation({
     summary:
       'Return current authenticated user role and effective permissions in the active organization',

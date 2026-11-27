@@ -57,6 +57,7 @@ import type {
   InvitationSummary,
   MemberSummary,
 } from "@/lib/authorization/types";
+import { orgOverviewPath } from "@/lib/navigation/location-urls.mjs";
 import {
   broadcastOrganizationChanged,
   useAccessContext,
@@ -92,8 +93,14 @@ const ALL_STATUS_FILTERS = ["ACTIVE", "SUSPENDED", "REMOVED"] as const;
 const PAGE_LIMIT = 25;
 
 export function MembersManagementPanel() {
-  const { organizationId, accessContext, loading: ctxLoading, can, refresh } =
-    useAccessContext();
+  const {
+    organizationId,
+    organizationSlug,
+    accessContext,
+    loading: ctxLoading,
+    can,
+    refresh,
+  } = useAccessContext();
   const canReadMembers = !ctxLoading && can("members:read");
 
   const [roleFilter, setRoleFilter] = useState<string>("");
@@ -203,7 +210,7 @@ export function MembersManagementPanel() {
     return (
       <PermissionDeniedState
         variant="forbidden"
-        backHref={`/app/organizations/${organizationId}`}
+        backHref={orgOverviewPath(organizationSlug)}
         backLabel="Back to organization overview"
         title="Member administration is restricted to Owners"
         description="Only active Organization Owners can view, invite, update, suspend, or remove organization members."

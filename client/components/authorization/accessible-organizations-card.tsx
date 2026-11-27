@@ -14,6 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { listAccessibleOrganizations } from "@/lib/authorization/api";
 import type { AccessibleOrganizationSummary } from "@/lib/authorization/types";
+import { orgOverviewPath } from "@/lib/navigation/location-urls.mjs";
 import { RoleBadge } from "./role-badge";
 
 export function AccessibleOrganizationsCard() {
@@ -100,7 +101,7 @@ export function AccessibleOrganizationsCard() {
                   </p>
                 </div>
                 <Button asChild size="sm" variant="secondary">
-                  <Link href={`/app/organizations/${org.organizationId}`}>
+                  <Link href={orgOverviewPath(org.slug)}>
                     <span>Open workspace</span>
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </Link>

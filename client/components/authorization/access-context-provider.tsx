@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { ApiClientError } from "@/lib/auth/client";
@@ -15,6 +16,8 @@ import type { OrganizationAccessContext } from "@/lib/authorization/types";
 
 export interface AccessContextState {
   organizationId: string;
+  organizationSlug: string;
+  organizationRef: string;
   accessContext: OrganizationAccessContext | null;
   permissions: ReadonlySet<string>;
   loading: boolean;
@@ -27,10 +30,29 @@ export interface AccessContextState {
 }
 
 interface FetchSnapshot {
-  organizationId: string;
+  organizationRef: string;
+  refreshTick: number;
   accessContext: OrganizationAccessContext | null;
   errorStatus: number | null;
   errorMessage: string | null;
+}
+
+function snapshotMatchesOrgRef(
+  snapshot: FetchSnapshot | null,
+  orgRef: string,
+): snapshot is FetchSnapshot {
+  if (!snapshot) return false;
+  const normalizedRef = orgRef.toLowerCase();
+  if (snapshot.organizationRef.toLowerCase() === normalizedRef) {
+    return true;
+  }
+  const ctx = snapshot.accessContext;
+  if (!ctx) return false;
+  return (
+    ctx.organizationId === orgRef ||
+    (ctx.organizationSlug.length > 0 &&
+      ctx.organizationSlug.toLowerCase() === normalizedRef)
+  );
 }
 
 const AccessContext = createContext<AccessContextState | null>(null);
@@ -45,21 +67,23 @@ export function broadcastOrganizationChanged(organizationId: string) {
 }
 
 function AccessContextProviderImpl({
-  organizationId,
+  organizationRef,
   children,
 }: {
-  organizationId: string;
+  organizationRef: string;
   children: React.ReactNode;
 }) {
   const [snapshot, setSnapshot] = useState<FetchSnapshot | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  const snapshotRef = useRef<FetchSnapshot | null>(null);
 
   const fetchForOrg = useCallback(
-    async (targetOrgId: string): Promise<FetchSnapshot> => {
+    async (targetOrgRef: string, tick: number): Promise<FetchSnapshot> => {
       try {
-        const response = await getOrganizationAccessContext(targetOrgId);
+        const response = await getOrganizationAccessContext(targetOrgRef);
         return {
-          organizationId: targetOrgId,
+          organizationRef: targetOrgRef,
+          refreshTick: tick,
           accessContext: response.data,
           errorStatus: null,
           errorMessage: null,
@@ -67,14 +91,16 @@ function AccessContextProviderImpl({
       } catch (error) {
         if (error instanceof ApiClientError) {
           return {
-            organizationId: targetOrgId,
+            organizationRef: targetOrgRef,
+            refreshTick: tick,
             accessContext: null,
             errorStatus: error.status,
             errorMessage: error.message,
           };
         }
         return {
-          organizationId: targetOrgId,
+          organizationRef: targetOrgRef,
+          refreshTick: tick,
           accessContext: null,
           errorStatus: 500,
           errorMessage: "Unable to verify organization permissions.",
@@ -85,16 +111,35 @@ function AccessContextProviderImpl({
   );
 
   useEffect(() => {
+    if (
+      snapshotRef.current &&
+      snapshotRef.current.refreshTick === refreshTick &&
+      snapshotMatchesOrgRef(snapshotRef.current, organizationRef)
+    ) {
+      return;
+    }
     let cancelled = false;
-    void fetchForOrg(organizationId).then((result) => {
+    void fetchForOrg(organizationRef, refreshTick).then((result) => {
       if (!cancelled) {
+        snapshotRef.current = result;
         setSnapshot(result);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [organizationId, refreshTick, fetchForOrg]);
+  }, [organizationRef, refreshTick, fetchForOrg]);
+
+  const isCurrentOrgSnapshot = snapshotMatchesOrgRef(snapshot, organizationRef);
+  const loading = !isCurrentOrgSnapshot;
+  const accessContext = isCurrentOrgSnapshot ? snapshot!.accessContext : null;
+  const errorStatus = isCurrentOrgSnapshot ? snapshot!.errorStatus : null;
+  const errorMessage = isCurrentOrgSnapshot ? snapshot!.errorMessage : null;
+  const canonicalOrgId = accessContext?.organizationId ?? organizationRef;
+  const canonicalOrgSlug =
+    accessContext?.organizationSlug && accessContext.organizationSlug.length > 0
+      ? accessContext.organizationSlug
+      : organizationRef;
 
   useEffect(() => {
     if (typeof BroadcastChannel === "undefined") {
@@ -106,12 +151,15 @@ function AccessContextProviderImpl({
 
     authChannel.onmessage = (event: MessageEvent<{ type?: string }>) => {
       if (event.data?.type === "SESSION_INVALIDATED") {
-        setSnapshot({
-          organizationId,
+        const invalidated: FetchSnapshot = {
+          organizationRef,
+          refreshTick,
           accessContext: null,
           errorStatus: 401,
           errorMessage: "Session ended.",
-        });
+        };
+        snapshotRef.current = invalidated;
+        setSnapshot(invalidated);
       } else if (event.data?.type === "SESSION_REFRESHED") {
         setRefreshTick((t) => t + 1);
       }
@@ -123,7 +171,11 @@ function AccessContextProviderImpl({
       if (
         event.data?.type === "MEMBERSHIP_CHANGED" &&
         (!event.data.organizationId ||
-          event.data.organizationId === organizationId)
+          event.data.organizationId === canonicalOrgId ||
+          event.data.organizationId.toLowerCase() ===
+            canonicalOrgSlug.toLowerCase() ||
+          event.data.organizationId.toLowerCase() ===
+            organizationRef.toLowerCase())
       ) {
         setRefreshTick((t) => t + 1);
       }
@@ -133,19 +185,13 @@ function AccessContextProviderImpl({
       authChannel.close();
       orgChannel.close();
     };
-  }, [organizationId]);
+  }, [organizationRef, canonicalOrgId, canonicalOrgSlug, refreshTick]);
 
   const refresh = useCallback(async () => {
-    const result = await fetchForOrg(organizationId);
+    const result = await fetchForOrg(organizationRef, refreshTick);
+    snapshotRef.current = result;
     setSnapshot(result);
-  }, [organizationId, fetchForOrg]);
-
-  // Any snapshot from a previous organization is discarded immediately during render.
-  const isCurrentOrgSnapshot = snapshot?.organizationId === organizationId;
-  const loading = !isCurrentOrgSnapshot;
-  const accessContext = isCurrentOrgSnapshot ? snapshot.accessContext : null;
-  const errorStatus = isCurrentOrgSnapshot ? snapshot.errorStatus : null;
-  const errorMessage = isCurrentOrgSnapshot ? snapshot.errorMessage : null;
+  }, [organizationRef, refreshTick, fetchForOrg]);
 
   const permissionSet = useMemo<ReadonlySet<string>>(
     () => new Set(accessContext?.permissions ?? []),
@@ -154,7 +200,9 @@ function AccessContextProviderImpl({
 
   const value = useMemo<AccessContextState>(
     () => ({
-      organizationId,
+      organizationId: canonicalOrgId,
+      organizationSlug: canonicalOrgSlug,
+      organizationRef,
       accessContext,
       permissions: permissionSet,
       loading,
@@ -166,7 +214,9 @@ function AccessContextProviderImpl({
       refresh,
     }),
     [
-      organizationId,
+      canonicalOrgId,
+      canonicalOrgSlug,
+      organizationRef,
       accessContext,
       permissionSet,
       loading,
@@ -189,11 +239,17 @@ export function AccessContextProvider({
   children: React.ReactNode;
 }) {
   const parentContext = useContext(AccessContext);
-  if (parentContext && parentContext.organizationId === organizationId) {
+  const normalizedTarget = organizationId.toLowerCase();
+  if (
+    parentContext &&
+    (parentContext.organizationRef.toLowerCase() === normalizedTarget ||
+      parentContext.organizationId === organizationId ||
+      parentContext.organizationSlug.toLowerCase() === normalizedTarget)
+  ) {
     return <>{children}</>;
   }
   return (
-    <AccessContextProviderImpl organizationId={organizationId}>
+    <AccessContextProviderImpl organizationRef={organizationId}>
       {children}
     </AccessContextProviderImpl>
   );

@@ -11,6 +11,7 @@ import {
   OrganizationStatus,
 } from '../../generated/prisma/enums.js';
 import {
+  ORG_SLUG_PATTERN,
   POLICY_VERSION,
   UUID_PATTERN,
 } from '../authorization.constants.js';
@@ -33,36 +34,54 @@ export class OrganizationContextGuard implements CanActivate {
       throw AppException.unauthenticated();
     }
 
-    const rawOrganizationId = request.params?.organizationId;
-    const organizationId =
-      typeof rawOrganizationId === 'string' ? rawOrganizationId.trim() : '';
+    const rawOrganizationRef = request.params?.organizationId;
+    const organizationRef =
+      typeof rawOrganizationRef === 'string' ? rawOrganizationRef.trim() : '';
 
-    if (!UUID_PATTERN.test(organizationId)) {
+    const isUuid = UUID_PATTERN.test(organizationRef);
+    const normalizedSlug = organizationRef.toLowerCase();
+    const isSlug = !isUuid && ORG_SLUG_PATTERN.test(normalizedSlug);
+
+    if (!isUuid && !isSlug) {
       await this.recordDenial(actor.userId, null, request, 'INVALID_ORG_PARAM');
       throw AppException.notFound();
     }
 
     const membership = await this.prisma.membership.findFirst({
-      where: {
-        organizationId,
-        userId: actor.userId,
-        status: MembershipStatus.ACTIVE,
-        organization: {
-          status: OrganizationStatus.ACTIVE,
-        },
-      },
+      where: isUuid
+        ? {
+            organizationId: organizationRef,
+            userId: actor.userId,
+            status: MembershipStatus.ACTIVE,
+            organization: {
+              status: OrganizationStatus.ACTIVE,
+            },
+          }
+        : {
+            userId: actor.userId,
+            status: MembershipStatus.ACTIVE,
+            organization: {
+              slug: normalizedSlug,
+              status: OrganizationStatus.ACTIVE,
+            },
+          },
       select: {
         id: true,
         organizationId: true,
         userId: true,
         role: true,
+        organization: {
+          select: {
+            slug: true,
+          },
+        },
       },
     });
 
     if (!membership) {
       await this.recordDenial(
         actor.userId,
-        organizationId,
+        isUuid ? organizationRef : normalizedSlug,
         request,
         'ORGANIZATION_ACCESS_DENIED',
       );
@@ -74,6 +93,7 @@ export class OrganizationContextGuard implements CanActivate {
     request.organizationContext = {
       userId: membership.userId,
       organizationId: membership.organizationId,
+      organizationSlug: membership.organization?.slug,
       membershipId: membership.id,
       role: membership.role,
       policyVersion: POLICY_VERSION,

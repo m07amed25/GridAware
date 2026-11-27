@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiClientError } from "@/lib/auth/client";
 import { createOrganization } from "@/lib/authorization/api";
+import { orgOverviewPath } from "@/lib/navigation/location-urls.mjs";
 
 const COMMON_TIMEZONES = [
   "UTC",
@@ -90,7 +91,9 @@ export default function CreateOrganizationPage() {
         timezone,
       });
       toast.success(`Organization "${response.data.name}" created.`);
-      router.push(`/app/organizations/${response.data.organizationId}`);
+      router.push(
+        orgOverviewPath(response.data.slug || response.data.organizationId),
+      );
       router.refresh();
     } catch (error) {
       if (error instanceof ApiClientError) {

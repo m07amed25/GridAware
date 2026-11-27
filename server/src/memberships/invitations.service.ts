@@ -339,6 +339,7 @@ export class InvitationsService {
     rawToken: string,
   ): Promise<{
     organizationId: string;
+    organizationSlug: string;
     organizationName: string;
     membershipId: string;
     role: MembershipRole;
@@ -358,7 +359,7 @@ export class InvitationsService {
         where: { tokenHash },
         include: {
           organization: {
-            select: { id: true, name: true, status: true },
+            select: { id: true, slug: true, name: true, status: true },
           },
         },
       });
@@ -449,6 +450,7 @@ export class InvitationsService {
 
       return {
         organizationId: invitation.organizationId,
+        organizationSlug: invitation.organization.slug,
         organizationName: invitation.organization.name,
         membershipId: membership.id,
         role: membership.role,
