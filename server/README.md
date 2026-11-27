@@ -23,7 +23,21 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+GridAware NestJS 12 + Prisma 7 + TypeScript modular monolith backend (`/api/v1`).
+
+Implemented domain modules:
+- **Auth & Sessions** (`src/auth/`, `src/sessions/`, `src/users/`)
+- **Organizations, Memberships & RBAC** (`src/organizations/`, `src/memberships/`, `src/authorization/`)
+- **Sites & Buildings Management (Phase 5.4)** (`src/sites/`, `src/buildings/`, `src/common/validation/`, `src/common/pagination/`, `src/common/observability/`)
+- **Audit Logging, Telemetry Ingestion & Simulator** (`src/audit-logs/`, `src/telemetry/`, `src/simulator/`)
+
+### Development Demo Locations Seed (Non-Production Only)
+
+```bash
+pnpm --filter server seed:demo-locations
+```
+
+Refuses execution when `NODE_ENV=production` and creates explicitly labeled demo fixtures.
 
 ## Project setup
 

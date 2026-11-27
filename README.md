@@ -31,8 +31,10 @@ docs/
     └── schemas/
 ```
 
-## Status note
+## Implementation status
 
-These are design documents and starter contract files, not implemented services. Open decisions remain clearly recorded. Approve transport/security decisions and validate machine-readable contracts before implementing public APIs or provisioning production device credentials.
+- **Phase 5.1 — Authentication & Identity**: Implemented in `server/` and `client/` (Argon2id passphrases, HttpOnly JWT + rotating refresh sessions, CSRF double-submit, email verification, password reset, active session management).
+- **Phase 5.2 & 5.3 — Organizations, Memberships & RBAC**: Implemented (`@OrgProtected()` 4-stage pipeline, 5-role capability matrix, member administration, ownership transfer, invitations, access-context endpoints & UI).
+- **Phase 5.4 — Sites & Buildings Management**: Implemented end-to-end (`Organization -> Site -> Building` Prisma schema with composite tenant-safe FK and 6 PostgreSQL `CHECK` constraints, 16 REST endpoints under `/api/v1/organizations/:organizationId/sites`, tenant-safe keyset cursor pagination, non-destructive archive/restore lifecycle with parent-child dependency protection, 12 atomic `AuditLog` events, ADRs `ADR-0010`–`ADR-0012`, and EVARAX WCAG 2.2 AA management screens in `client/`).
 
 Start at [`docs/architecture/README.md`](docs/architecture/README.md), then review [`docs/architecture/phase-3.3/README.md`](docs/architecture/phase-3.3/README.md).

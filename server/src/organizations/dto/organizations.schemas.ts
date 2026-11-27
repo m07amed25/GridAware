@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UUID_PATTERN } from '../../authorization/authorization.constants.js';
 
 function isValidIanaTimezone(value: string): boolean {
   try {
@@ -18,6 +19,10 @@ export const SlugSchema = z
   .regex(
     /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
     'Slug must contain lowercase letters, numbers, and single hyphens only.',
+  )
+  .refine(
+    (value) => !UUID_PATTERN.test(value),
+    'Slug cannot use a UUID format.',
   );
 
 export const TimezoneSchema = z

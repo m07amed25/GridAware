@@ -49,7 +49,7 @@ export class OrganizationInvitationsController {
 
   @Get()
   @RequirePermissions('members:read')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiOperation({
     summary: 'List organization member invitations (requires members:read)',
   })
@@ -63,7 +63,7 @@ export class OrganizationInvitationsController {
 
   @Post()
   @RequirePermissions('members:invite')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiOperation({
     summary:
@@ -86,7 +86,7 @@ export class OrganizationInvitationsController {
   @Post(':invitationId/revoke')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('members:revoke-invitation')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiParam({ name: 'invitationId', format: 'uuid' })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiOperation({

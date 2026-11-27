@@ -9,3 +9,5 @@ export const MEMBERSHIP_REVOKED_REDIS_CHANNEL =
 
 export const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const ORG_SLUG_PATTERN = /^(?=.{2,80}$)[a-z0-9]+(?:-[a-z0-9]+)*$/;

@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import { AuditLogsService } from '../audit-logs/audit-logs.service.js';
-import { POLICY_VERSION } from '../authorization/authorization.constants.js';
+import {
+  POLICY_VERSION,
+  UUID_PATTERN,
+} from '../authorization/authorization.constants.js';
 import type { OrganizationAuthorizationContext } from '../authorization/authorization.types.js';
 import { ROLE_PERMISSION_LISTS } from '../authorization/permission-map.js';
 import { AppException } from '../common/exceptions/app.exception.js';
@@ -78,7 +81,13 @@ function slugifyOrganizationName(name: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 64);
-  return base.length >= 2 ? base : `org-${randomBytes(3).toString('hex')}`;
+  if (base.length < 2) {
+    return `org-${randomBytes(3).toString('hex')}`;
+  }
+  if (UUID_PATTERN.test(base)) {
+    return `org-${base}`;
+  }
+  return base;
 }
 
 function toProfile(row: OrganizationProfileRow): OrganizationProfile {

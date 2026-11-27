@@ -16,10 +16,18 @@ export const ErrorCode = {
   ACCOUNT_NOT_ACTIVE: 'ACCOUNT_NOT_ACTIVE',
   CSRF_INVALID: 'CSRF_INVALID',
   RESOURCE_NOT_FOUND: 'RESOURCE_NOT_FOUND',
+  SITE_NOT_FOUND: 'SITE_NOT_FOUND',
+  BUILDING_NOT_FOUND: 'BUILDING_NOT_FOUND',
   TENANT_SCOPE_MISMATCH: 'TENANT_SCOPE_MISMATCH',
   STATE_TRANSITION_NOT_ALLOWED: 'STATE_TRANSITION_NOT_ALLOWED',
   IDEMPOTENCY_CONFLICT: 'IDEMPOTENCY_CONFLICT',
   RESOURCE_CONFLICT: 'RESOURCE_CONFLICT',
+  SITE_CODE_ALREADY_EXISTS: 'SITE_CODE_ALREADY_EXISTS',
+  BUILDING_CODE_ALREADY_EXISTS: 'BUILDING_CODE_ALREADY_EXISTS',
+  SITE_ARCHIVED: 'SITE_ARCHIVED',
+  SITE_INACTIVE: 'SITE_INACTIVE',
+  SITE_HAS_ACTIVE_BUILDINGS: 'SITE_HAS_ACTIVE_BUILDINGS',
+  INVALID_LOCATION_STATE: 'INVALID_LOCATION_STATE',
   EMAIL_UNAVAILABLE: 'EMAIL_UNAVAILABLE',
   PRECONDITION_FAILED: 'PRECONDITION_FAILED',
   RATE_LIMITED: 'RATE_LIMITED',
@@ -114,6 +122,18 @@ export const ERROR_CATALOG: Readonly<Record<ErrorCode, ErrorCatalogEntry>> = {
     title: 'Resource not found',
     defaultDetail: 'The requested resource was not found.',
   },
+  [ErrorCode.SITE_NOT_FOUND]: {
+    status: HttpStatus.NOT_FOUND,
+    slug: 'site-not-found',
+    title: 'Site not found',
+    defaultDetail: 'The requested site was not found.',
+  },
+  [ErrorCode.BUILDING_NOT_FOUND]: {
+    status: HttpStatus.NOT_FOUND,
+    slug: 'building-not-found',
+    title: 'Building not found',
+    defaultDetail: 'The requested building was not found.',
+  },
   [ErrorCode.TENANT_SCOPE_MISMATCH]: {
     status: HttpStatus.NOT_FOUND,
     slug: 'tenant-scope-mismatch',
@@ -137,6 +157,46 @@ export const ERROR_CATALOG: Readonly<Record<ErrorCode, ErrorCatalogEntry>> = {
     slug: 'resource-conflict',
     title: 'Resource conflict',
     defaultDetail: 'The request conflicts with the current state of the resource.',
+  },
+  [ErrorCode.SITE_CODE_ALREADY_EXISTS]: {
+    status: HttpStatus.CONFLICT,
+    slug: 'site-code-already-exists',
+    title: 'Site code already exists',
+    defaultDetail: 'A site with this code already exists in the organization.',
+  },
+  [ErrorCode.BUILDING_CODE_ALREADY_EXISTS]: {
+    status: HttpStatus.CONFLICT,
+    slug: 'building-code-already-exists',
+    title: 'Building code already exists',
+    defaultDetail: 'A building with this code already exists in the site.',
+  },
+  [ErrorCode.SITE_ARCHIVED]: {
+    status: HttpStatus.CONFLICT,
+    slug: 'site-archived',
+    title: 'Site is archived',
+    defaultDetail:
+      'The parent site is archived. Restore and activate the site before performing this operation.',
+  },
+  [ErrorCode.SITE_INACTIVE]: {
+    status: HttpStatus.CONFLICT,
+    slug: 'site-inactive',
+    title: 'Site is inactive',
+    defaultDetail:
+      'The parent site is inactive. Activate the site before creating or restoring buildings.',
+  },
+  [ErrorCode.SITE_HAS_ACTIVE_BUILDINGS]: {
+    status: HttpStatus.CONFLICT,
+    slug: 'site-has-active-buildings',
+    title: 'Site has non-archived buildings',
+    defaultDetail:
+      'Archive all non-archived buildings under this site before archiving the site.',
+  },
+  [ErrorCode.INVALID_LOCATION_STATE]: {
+    status: HttpStatus.CONFLICT,
+    slug: 'invalid-location-state',
+    title: 'Invalid location state',
+    defaultDetail:
+      'The current lifecycle state of this location does not permit the requested action.',
   },
   [ErrorCode.EMAIL_UNAVAILABLE]: {
     status: HttpStatus.CONFLICT,

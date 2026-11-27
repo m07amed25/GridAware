@@ -58,7 +58,7 @@ export class MembershipsController {
 
   @Get('members')
   @RequirePermissions('members:read')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiOperation({
     summary: 'List paginated organization members (requires members:read)',
   })
@@ -79,7 +79,7 @@ export class MembershipsController {
 
   @Get('members/:membershipId')
   @RequirePermissions('members:read')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiParam({ name: 'membershipId', format: 'uuid' })
   @ApiOperation({
     summary: 'Get tenant-scoped organization member detail (requires members:read)',
@@ -101,7 +101,7 @@ export class MembershipsController {
 
   @Patch('members/:membershipId/role')
   @RequirePermissions('members:update-role')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiParam({ name: 'membershipId', format: 'uuid' })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiBody({ type: UpdateMemberRoleDto })
@@ -133,7 +133,7 @@ export class MembershipsController {
   @Post('members/:membershipId/suspend')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('members:suspend')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiParam({ name: 'membershipId', format: 'uuid' })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiOperation({
@@ -161,7 +161,7 @@ export class MembershipsController {
   @Post('members/:membershipId/reactivate')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('members:suspend')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiParam({ name: 'membershipId', format: 'uuid' })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiOperation({
@@ -185,7 +185,7 @@ export class MembershipsController {
 
   @Delete('members/:membershipId')
   @RequirePermissions('members:remove')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiParam({ name: 'membershipId', format: 'uuid' })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiOperation({
@@ -213,7 +213,7 @@ export class MembershipsController {
   @Post('ownership-transfer')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('members:update-role', 'organization:update')
-  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiParam({ name: 'organizationId', description: 'Organization UUID or slug' })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiBody({ type: TransferOwnershipDto })
   @ApiOperation({

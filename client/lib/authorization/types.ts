@@ -15,6 +15,7 @@ export type InvitationStatus = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
 
 export interface OrganizationAccessContext {
   organizationId: string;
+  organizationSlug: string;
   membershipId: string;
   role: MembershipRole;
   permissions: readonly string[];
@@ -90,6 +91,7 @@ export interface InvitationPreview {
 
 export interface AcceptInvitationResult {
   organizationId: string;
+  organizationSlug: string;
   organizationName: string;
   membershipId: string;
   role: MembershipRole;

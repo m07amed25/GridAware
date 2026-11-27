@@ -55,6 +55,32 @@ enum InvitationStatus {
   EXPIRED
 }
 
+enum SiteType {
+  FACTORY
+  INDUSTRIAL_FACILITY
+  COMMERCIAL_COMPLEX
+  COMMERCIAL_PROPERTY
+  CAMPUS
+  WAREHOUSE_CAMPUS
+  OTHER
+}
+
+enum BuildingType {
+  PRODUCTION
+  OFFICE
+  WAREHOUSE
+  UTILITY
+  RETAIL
+  PLANT_ROOM
+  PARKING
+  OTHER
+}
+
+enum LocationStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id              String     @id @default(uuid()) @db.Uuid
   email           String     @db.VarChar(254)
@@ -89,6 +115,8 @@ model Organization {
 
   memberships Membership[]
   invitations OrganizationInvitation[]
+  sites       Site[]
+  buildings   Building[]
   auditLogs   AuditLog[]
 
   @@index([status, createdAt])
@@ -217,4 +245,61 @@ model AuditLog {
   @@index([action, occurredAt])
   @@index([correlationId])
   @@map("audit_logs")
+}
+
+model Site {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @db.Uuid
+  code           String         @db.VarChar(32)
+  name           String         @db.VarChar(120)
+  type           SiteType
+  description    String?        @db.VarChar(2000)
+  addressLine1   String?        @db.VarChar(200)
+  addressLine2   String?        @db.VarChar(200)
+  city           String?        @db.VarChar(200)
+  region         String?        @db.VarChar(200)
+  postalCode     String?        @db.VarChar(32)
+  countryCode    String?        @db.VarChar(2)
+  latitude       Float?
+  longitude      Float?
+  timeZone       String         @default("UTC") @db.VarChar(64)
+  status         LocationStatus @default(ACTIVE)
+  archivedAt     DateTime?      @db.Timestamptz(6)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  buildings    Building[]
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, code])
+  @@index([organizationId, status, archivedAt, createdAt])
+  @@index([organizationId, city])
+  @@map("sites")
+}
+
+model Building {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @db.Uuid
+  siteId         String         @db.Uuid
+  code           String         @db.VarChar(32)
+  name           String         @db.VarChar(120)
+  type           BuildingType
+  description    String?        @db.VarChar(2000)
+  floorCount     Int?
+  grossAreaSqM   Decimal?       @db.Decimal(12, 2)
+  status         LocationStatus @default(ACTIVE)
+  archivedAt     DateTime?      @db.Timestamptz(6)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  site         Site         @relation(fields: [siteId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  @@unique([id, organizationId])
+  @@unique([id, siteId, organizationId])
+  @@unique([siteId, code])
+  @@index([organizationId, siteId, status, archivedAt, createdAt])
+  @@index([organizationId, status])
+  @@map("buildings")
 }

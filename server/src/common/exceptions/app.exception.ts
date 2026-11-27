@@ -127,6 +127,70 @@ export class AppException extends HttpException {
     });
   }
 
+  static siteNotFound(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.SITE_NOT_FOUND,
+      detail,
+    });
+  }
+
+  static buildingNotFound(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.BUILDING_NOT_FOUND,
+      detail,
+    });
+  }
+
+  static siteCodeAlreadyExists(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.SITE_CODE_ALREADY_EXISTS,
+      detail,
+    });
+  }
+
+  static buildingCodeAlreadyExists(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.BUILDING_CODE_ALREADY_EXISTS,
+      detail,
+    });
+  }
+
+  static siteArchived(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.SITE_ARCHIVED,
+      detail,
+    });
+  }
+
+  static siteInactive(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.SITE_INACTIVE,
+      detail,
+    });
+  }
+
+  static siteHasActiveBuildings(
+    activeBuildingCount?: number,
+    detail?: string,
+  ): AppException {
+    const resolvedDetail =
+      detail ??
+      (typeof activeBuildingCount === 'number'
+        ? `Cannot archive site while ${activeBuildingCount} non-archived ${activeBuildingCount === 1 ? 'building remains' : 'buildings remain'}. Archive all buildings first.`
+        : undefined);
+    return new AppException({
+      code: ErrorCode.SITE_HAS_ACTIVE_BUILDINGS,
+      detail: resolvedDetail,
+    });
+  }
+
+  static invalidLocationState(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.INVALID_LOCATION_STATE,
+      detail,
+    });
+  }
+
   static tenantScopeMismatch(
     detail?: string,
     status: HttpStatus.NOT_FOUND | HttpStatus.FORBIDDEN = HttpStatus.NOT_FOUND,

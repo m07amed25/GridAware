@@ -75,6 +75,7 @@ export type Permission = (typeof ALL_PERMISSIONS)[number];
 export interface OrganizationAuthorizationContext {
   readonly userId: string;
   readonly organizationId: string;
+  readonly organizationSlug?: string;
   readonly membershipId: string;
   readonly role: MembershipRole;
   readonly policyVersion: string;
@@ -82,6 +83,7 @@ export interface OrganizationAuthorizationContext {
 
 export interface AccessContextPayload {
   readonly organizationId: string;
+  readonly organizationSlug: string;
   readonly membershipId: string;
   readonly role: MembershipRole;
   readonly permissions: readonly Permission[];

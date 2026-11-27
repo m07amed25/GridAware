@@ -6,6 +6,9 @@ export class AccessContextDataDto {
   @ApiProperty({ format: 'uuid' })
   organizationId!: string;
 
+  @ApiProperty({ example: 'demo-gridaware-facilities' })
+  organizationSlug!: string;
+
   @ApiProperty({ format: 'uuid' })
   membershipId!: string;
 

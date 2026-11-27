@@ -10,10 +10,13 @@ import {
   OrganizationStatus,
   UserStatus,
 } from '../../generated/prisma/enums.js';
+import { AuthorizationService } from '../authorization.service.js';
+import { SlugSchema } from '../../organizations/dto/organizations.schemas.js';
 import type { RequestWithOrganizationContext } from '../authorization.types.js';
 import { OrganizationContextGuard } from '../guards/organization-context.guard.js';
 
 const ORG_A = '11111111-1111-4111-8111-111111111111';
+const ORG_A_SLUG = 'demo-gridaware-facilities';
 const ORG_B = '22222222-2222-4222-8222-222222222222';
 const USER_1 = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const MEM_1 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -51,9 +54,9 @@ describe('OrganizationContextGuard', () => {
       guard.canActivate(
         createContext({
           user: { userId: USER_1, sessionId: 's1', email: 'a@b.com', status: UserStatus.ACTIVE },
-          params: { organizationId: 'not-a-uuid' },
+          params: { organizationId: 'bad..slug!' },
           method: 'GET',
-          path: '/api/v1/organizations/not-a-uuid/members',
+          path: '/api/v1/organizations/bad..slug!/members',
         }),
       ),
     ).rejects.toSatisfy(
@@ -78,6 +81,7 @@ describe('OrganizationContextGuard', () => {
       organizationId: ORG_A,
       userId: USER_1,
       role: MembershipRole.ENGINEER,
+      organization: { slug: ORG_A_SLUG },
     });
     const record = vi.fn();
     const guard = new OrganizationContextGuard(
@@ -108,10 +112,74 @@ describe('OrganizationContextGuard', () => {
     expect(req.organizationContext).toEqual({
       userId: USER_1,
       organizationId: ORG_A,
+      organizationSlug: ORG_A_SLUG,
       membershipId: MEM_1,
       role: MembershipRole.ENGINEER,
       policyVersion: '1',
     });
+  });
+
+  it('resolves organization by lowercase or mixed-case slug and populates canonical organizationId and organizationSlug', async () => {
+    const findFirst = vi.fn().mockResolvedValue({
+      id: MEM_1,
+      organizationId: ORG_A,
+      userId: USER_1,
+      role: MembershipRole.FACILITY_MANAGER,
+      organization: { slug: ORG_A_SLUG },
+    });
+    const record = vi.fn();
+    const guard = new OrganizationContextGuard(
+      { membership: { findFirst } } as unknown as PrismaService,
+      { record } as unknown as AuditLogsService,
+    );
+
+    const req: Partial<RequestWithOrganizationContext> = {
+      user: { userId: USER_1, sessionId: 's1', email: 'a@b.com', status: UserStatus.ACTIVE },
+      params: { organizationId: 'Demo-GridAware-Facilities' },
+      method: 'GET',
+      path: '/api/v1/organizations/Demo-GridAware-Facilities/access-context',
+    };
+
+    const result = await guard.canActivate(createContext(req));
+    expect(result).toBe(true);
+    expect(findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          userId: USER_1,
+          status: MembershipStatus.ACTIVE,
+          organization: {
+            slug: ORG_A_SLUG,
+            status: OrganizationStatus.ACTIVE,
+          },
+        },
+      }),
+    );
+    expect(req.organizationContext).toEqual({
+      userId: USER_1,
+      organizationId: ORG_A,
+      organizationSlug: ORG_A_SLUG,
+      membershipId: MEM_1,
+      role: MembershipRole.FACILITY_MANAGER,
+      policyVersion: '1',
+    });
+  });
+
+  it('rejects UUID-shaped custom organization slugs in SlugSchema', () => {
+    expect(SlugSchema.safeParse(ORG_A).success).toBe(false);
+    expect(SlugSchema.safeParse(ORG_A_SLUG).success).toBe(true);
+  });
+
+  it('includes organizationSlug in AuthorizationService.buildAccessContext', () => {
+    const authz = new AuthorizationService();
+    const payload = authz.buildAccessContext({
+      userId: USER_1,
+      organizationId: ORG_A,
+      organizationSlug: ORG_A_SLUG,
+      membershipId: MEM_1,
+      role: MembershipRole.OWNER,
+      policyVersion: '1',
+    });
+    expect(payload.organizationSlug).toBe(ORG_A_SLUG);
   });
 
   it('returns concealed 404 RESOURCE_NOT_FOUND when membership or organization is inactive or missing', async () => {
