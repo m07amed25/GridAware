@@ -4,12 +4,20 @@ import { ProtectedHeader } from "@/components/auth/protected-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getServerCurrentUser } from "@/lib/auth/server";
 
-async function ProtectedShell({ children }: { children: React.ReactNode }) {
+async function ProtectedHeaderGate() {
   const user = await getServerCurrentUser();
   if (!user) {
     redirect("/login?reason=session-expired");
   }
 
+  return <ProtectedHeader user={user} />;
+}
+
+export default function ProtectedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--surface-canvas)]">
       <a
@@ -19,7 +27,19 @@ async function ProtectedShell({ children }: { children: React.ReactNode }) {
         Skip to main content
       </a>
 
-      <ProtectedHeader user={user} />
+      <Suspense
+        fallback={
+          <div
+            className="h-16 border-b border-[var(--border-subtle)] bg-[var(--surface-1)] px-4 sm:px-8 flex items-center justify-between"
+            aria-busy="true"
+          >
+            <Skeleton className="h-7 w-32" />
+            <Skeleton className="h-9 w-36" />
+          </div>
+        }
+      >
+        <ProtectedHeaderGate />
+      </Suspense>
 
       <main
         id="protected-main"
@@ -29,29 +49,5 @@ async function ProtectedShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
     </div>
-  );
-}
-
-export default function ProtectedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[var(--surface-canvas)]" aria-busy="true">
-          <div className="h-16 border-b border-[var(--border-subtle)] bg-[var(--surface-1)] px-4 sm:px-8 flex items-center justify-between">
-            <Skeleton className="h-7 w-32" />
-            <Skeleton className="h-9 w-36" />
-          </div>
-          <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-8">
-            <Skeleton className="h-44 w-full max-w-4xl" />
-          </div>
-        </div>
-      }
-    >
-      <ProtectedShell>{children}</ProtectedShell>
-    </Suspense>
   );
 }

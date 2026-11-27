@@ -1,9 +1,11 @@
 import { render } from '@react-email/render';
 import { createElement } from 'react';
 import type {
+  OrganizationInvitationEmailPayload,
   PasswordResetEmailPayload,
   VerificationEmailPayload,
 } from '../mailer.port.js';
+import { OrganizationInvitationTemplate } from './organization-invitation.template.js';
 import { PasswordResetTemplate } from './password-reset.template.js';
 import { VerifyEmailTemplate } from './verify-email.template.js';
 
@@ -48,6 +50,28 @@ export async function renderPasswordResetEmail(
 
   return {
     subject: 'Reset your GridAware passphrase',
+    html,
+    text,
+  };
+}
+
+export async function renderOrganizationInvitationEmail(
+  payload: OrganizationInvitationEmailPayload,
+): Promise<RenderedEmail> {
+  const element = createElement(OrganizationInvitationTemplate, {
+    organizationName: payload.organizationName,
+    inviterName: payload.inviterName,
+    role: payload.role,
+    acceptUrl: payload.acceptUrl,
+    expiresInDays: payload.expiresInDays,
+  });
+  const [html, text] = await Promise.all([
+    render(element),
+    render(element, { plainText: true }),
+  ]);
+
+  return {
+    subject: `You're invited to join ${payload.organizationName} on GridAware`,
     html,
     text,
   };

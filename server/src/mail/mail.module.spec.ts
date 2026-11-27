@@ -8,6 +8,7 @@ import { MailModule } from './mail.module.js';
 import { MAILER_PORT, type MailerPort } from './mailer.port.js';
 import { SmtpMailerAdapter } from './smtp-mailer.adapter.js';
 import {
+  renderOrganizationInvitationEmail,
   renderPasswordResetEmail,
   renderVerificationEmail,
 } from './templates/render-templates.js';
@@ -174,5 +175,26 @@ describe('MailModule', () => {
     expect(reset.html).toContain('Choose a new passphrase');
     expect(reset.html).toContain('60 minutes');
     expect(reset.text).toContain('http://localhost:3000/reset-password?token=xyz');
+
+    const invite = await renderOrganizationInvitationEmail({
+      to: 'sam@example.com',
+      organizationName: 'North Grid <Ops>',
+      inviterName: 'Mohamed Reda Ali',
+      role: 'FACILITY_MANAGER',
+      acceptUrl: 'http://localhost:3000/invite/accept?token=inv_123',
+      expiresInDays: 7,
+    });
+    expect(invite.subject).toBe(
+      "You're invited to join North Grid <Ops> on GridAware",
+    );
+    expect(invite.html).toContain('Accept invitation');
+    expect(invite.html).toContain('Facility Manager');
+    expect(invite.html).not.toContain('FACILITY_MANAGER');
+    expect(invite.html).toContain('North Grid &lt;Ops&gt;');
+    expect(invite.html).toContain('7 days');
+    expect(invite.text).toContain('Facility Manager');
+    expect(invite.text).toContain(
+      'http://localhost:3000/invite/accept?token=inv_123',
+    );
   });
 });

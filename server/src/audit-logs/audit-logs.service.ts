@@ -16,19 +16,37 @@ export type AuditAction =
   | 'AUTH_EMAIL_VERIFICATION_RESENT'
   | 'AUTH_PASSWORD_RESET_REQUESTED'
   | 'AUTH_PASSWORD_RESET_COMPLETED'
-  | 'AUTH_USER_STATUS_CHANGED';
+  | 'AUTH_USER_STATUS_CHANGED'
+  | 'AUTHZ_DENIED'
+  | 'MEMBERSHIP_ROLE_CHANGED'
+  | 'MEMBERSHIP_SUSPENDED'
+  | 'MEMBERSHIP_REACTIVATED'
+  | 'MEMBERSHIP_REMOVED'
+  | 'INVITATION_CREATED'
+  | 'INVITATION_REVOKED'
+  | 'INVITATION_ACCEPTED'
+  | 'ORGANIZATION_CREATED'
+  | 'ORGANIZATION_UPDATED'
+  | 'ORGANIZATION_ARCHIVED'
+  | 'OWNERSHIP_TRANSFER_INITIATED'
+  | 'OWNERSHIP_TRANSFER_COMPLETED'
+  | 'EXPORT_REQUESTED'
+  | 'EXPORT_COMPLETED'
+  | 'EXPORT_FAILED'
+  | 'SIMULATOR_CONTROL_EXECUTED';
 
 export interface RecordAuditEventInput {
   action: AuditAction;
   entityType: string;
   entityId?: string | null;
   actorUserId?: string | null;
+  actorMembershipId?: string | null;
   organizationId?: string | null;
   metadata?: Record<string, unknown>;
 }
 
 const SENSITIVE_KEY_PATTERN =
-  /password|secret|token|cookie|authorization|csrf|hash/i;
+  /password|secret|token|cookie|authorization|csrf|hash|credential|rawbody/i;
 
 function sanitizeValue(value: unknown): unknown {
   if (
@@ -76,6 +94,7 @@ export class AuditLogsService {
       data: {
         organizationId: input.organizationId ?? null,
         actorUserId: input.actorUserId ?? null,
+        actorMembershipId: input.actorMembershipId ?? null,
         action: input.action,
         entityType: input.entityType,
         entityId: input.entityId ?? null,

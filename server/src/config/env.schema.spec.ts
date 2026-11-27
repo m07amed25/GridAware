@@ -64,6 +64,7 @@ describe('validateServerEnv', () => {
       MAIL_SMTP_USER: undefined,
       MAIL_SMTP_PASS: undefined,
       APP_URL: 'http://localhost:3000',
+      SIMULATOR_DEMO_CONTROL_ENABLED: false,
     });
   });
 

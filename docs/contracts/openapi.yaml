@@ -307,6 +307,190 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/OrganizationResponse' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /organizations/{organizationId}/access-context:
+    get:
+      tags: [Organizations]
+      summary: Retrieve current authenticated user role and effective permissions in the organization
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Verified organization authorization context and permission list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccessContextResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /organizations/{organizationId}/members:
+    get:
+      tags: [Organizations]
+      summary: List paginated organization members (requires members:read)
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Paginated organization member list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemberListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /organizations/{organizationId}/members/{membershipId}:
+    get:
+      tags: [Organizations]
+      summary: Get tenant-scoped member detail (requires members:read)
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: membershipId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Member detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemberDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Organizations]
+      summary: Soft-remove an eligible membership (requires members:remove; last-owner protected)
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: membershipId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      responses:
+        '200':
+          description: Membership removed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemberDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /organizations/{organizationId}/members/{membershipId}/role:
+    patch:
+      tags: [Organizations]
+      summary: Update a non-owner member role (requires members:update-role)
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: membershipId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateMemberRoleRequest' }
+      responses:
+        '200':
+          description: Member role updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemberDetailResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /organizations/{organizationId}/members/{membershipId}/suspend:
+    post:
+      tags: [Organizations]
+      summary: Suspend an active membership (requires members:suspend; last-owner protected)
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: membershipId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      responses:
+        '200':
+          description: Membership suspended
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemberDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /organizations/{organizationId}/members/{membershipId}/reactivate:
+    post:
+      tags: [Organizations]
+      summary: Reactivate a suspended membership (requires members:suspend)
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: membershipId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      responses:
+        '200':
+          description: Membership reactivated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemberDetailResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /organizations/{organizationId}/ownership-transfer:
+    post:
+      tags: [Organizations]
+      summary: Atomically transfer organization ownership to an active member (OWNER only)
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TransferOwnershipRequest' }
+      responses:
+        '200':
+          description: Ownership transferred atomically
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OwnershipTransferResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /organizations/{organizationId}/sites:
     parameters:
       - $ref: '#/components/parameters/OrganizationId'
@@ -879,6 +1063,98 @@ components:
       required: [data, meta]
       properties:
         data: { type: array, items: { $ref: '#/components/schemas/Incident' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+    RbacMembershipRole:
+      type: string
+      enum: [OWNER, FACILITY_MANAGER, ENGINEER, TECHNICIAN, VIEWER]
+    AssignableNonOwnerRole:
+      type: string
+      enum: [FACILITY_MANAGER, ENGINEER, TECHNICIAN, VIEWER]
+    RbacMembershipStatus:
+      type: string
+      enum: [INVITED, ACTIVE, SUSPENDED, REMOVED]
+    AccessContextData:
+      type: object
+      additionalProperties: false
+      required: [organizationId, membershipId, role, permissions, policyVersion]
+      properties:
+        organizationId: { type: string, format: uuid }
+        membershipId: { type: string, format: uuid }
+        role: { $ref: '#/components/schemas/RbacMembershipRole' }
+        permissions:
+          type: array
+          items: { type: string }
+        policyVersion: { type: string }
+    AccessContextResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/AccessContextData' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    MemberSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - membershipId
+        - organizationId
+        - userId
+        - email
+        - displayName
+        - role
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        membershipId: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        role: { $ref: '#/components/schemas/RbacMembershipRole' }
+        status: { $ref: '#/components/schemas/RbacMembershipStatus' }
+        suspendedAt: { type: [string, 'null'], format: date-time }
+        removedAt: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MemberDetailResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/MemberSummary' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    MemberListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/MemberSummary' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+    UpdateMemberRoleRequest:
+      type: object
+      additionalProperties: false
+      required: [role]
+      properties:
+        role: { $ref: '#/components/schemas/AssignableNonOwnerRole' }
+    TransferOwnershipRequest:
+      type: object
+      additionalProperties: false
+      required: [targetMembershipId, confirmTransfer]
+      properties:
+        targetMembershipId: { type: string, format: uuid }
+        confirmTransfer: { type: boolean, const: true }
+        previousOwnerNextRole: { $ref: '#/components/schemas/AssignableNonOwnerRole' }
+    OwnershipTransferData:
+      type: object
+      additionalProperties: false
+      required: [organizationId, newOwnerMembership, previousOwnerMembership]
+      properties:
+        organizationId: { type: string, format: uuid }
+        newOwnerMembership: { $ref: '#/components/schemas/MemberSummary' }
+        previousOwnerMembership: { $ref: '#/components/schemas/MemberSummary' }
+    OwnershipTransferResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/OwnershipTransferData' }
         meta: { $ref: '#/components/schemas/Meta' }
   responses:
     BadRequest:

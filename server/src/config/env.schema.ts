@@ -368,6 +368,7 @@ export const serverEnvSchema = z
       (v) => emptyToUndefined(v) ?? 'http://localhost:3000',
       httpUrlSchema,
     ),
+    SIMULATOR_DEMO_CONTROL_ENABLED: booleanSchema(false),
   })
   .superRefine((env, ctx) => {
     const hasKey = env.OBSERVE_APP_KEY !== undefined;
