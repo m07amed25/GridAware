@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "node --test lib/api.test.mjs lib/env.test.mjs lib/auth/proxy.test.mjs lib/auth/client.test.mjs lib/auth/passphrase-policy.test.mjs lib/auth/user-agent-parser.test.mjs lib/auth/auth-validation.test.mjs lib/auth/session-time.test.mjs lib/authorization/permissions.test.mjs"
+    "test": "node --test lib/api.test.mjs lib/env.test.mjs lib/auth/proxy.test.mjs lib/auth/client.test.mjs lib/auth/passphrase-policy.test.mjs lib/auth/user-agent-parser.test.mjs lib/auth/auth-validation.test.mjs lib/auth/session-time.test.mjs lib/authorization/permissions.test.mjs lib/locations/validation.test.mjs lib/navigation/shell-nav.test.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.2.1",
