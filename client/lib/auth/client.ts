@@ -12,15 +12,25 @@ const NO_REFRESH_PATHS = new Set([
   "/auth/csrf",
 ]);
 
-function broadcastAuthEvent(event: {
-  type: "SESSION_REFRESHED" | "SESSION_INVALIDATED";
-}) {
+export type SessionInvalidationReason = "session-expired" | "signed-out";
+
+export type AuthBroadcastEvent =
+  | { type: "SESSION_REFRESHED" }
+  | { type: "SESSION_INVALIDATED"; reason?: SessionInvalidationReason };
+
+function broadcastAuthEvent(event: AuthBroadcastEvent) {
   if (typeof BroadcastChannel === "undefined") {
     return;
   }
   const channel = new BroadcastChannel("gridaware:auth");
   channel.postMessage(event);
   channel.close();
+}
+
+export function broadcastSessionInvalidated(
+  reason: SessionInvalidationReason = "signed-out",
+) {
+  broadcastAuthEvent({ type: "SESSION_INVALIDATED", reason });
 }
 
 const refreshCoordinator = createRefreshCoordinator({
@@ -39,7 +49,16 @@ const refreshCoordinator = createRefreshCoordinator({
       return false;
     }
   },
-  broadcast: broadcastAuthEvent,
+  broadcast: (event: AuthBroadcastEvent) => {
+    if (event.type === "SESSION_INVALIDATED" && !event.reason) {
+      broadcastAuthEvent({
+        type: "SESSION_INVALIDATED",
+        reason: "session-expired",
+      });
+      return;
+    }
+    broadcastAuthEvent(event);
+  },
 });
 
 export class ApiClientError extends Error {

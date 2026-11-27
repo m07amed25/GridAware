@@ -163,6 +163,9 @@ jobs:
           cat > server/.env <<'EOF'
           NODE_ENV=production
           DATABASE_URL=postgresql://user:pass@ep-ci-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
+          AUTH_ACCESS_TOKEN_SECRET=ci-smoke-test-access-token-secret-32chars
+          MAIL_PROVIDER=resend
+          MAIL_API_KEY=ci_dummy_mail_api_key
           EOF
 
           docker compose up -d --no-build --wait --wait-timeout 90

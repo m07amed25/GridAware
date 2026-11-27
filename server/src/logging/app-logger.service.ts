@@ -5,6 +5,11 @@ import {
 } from '@nestjs/common';
 import type { AppLogLevel } from '../config/env.schema.js';
 import { EnvService } from '../config/env.service.js';
+import {
+  formatClockTimestamp,
+  formatPrettyLogEntry,
+  formatStackTrace,
+} from './log-formatter.js';
 import { getRequestContext } from './request-context.js';
 
 export const SERVICE_NAME = 'gridaware-server';
@@ -53,17 +58,70 @@ export function redactUrlCredentials(value: string): string {
   return value.replace(URL_CREDENTIALS_PATTERN, '$1[REDACTED]@');
 }
 
-function sanitizeMessage(message: unknown): unknown {
-  return typeof message === 'string' ? redactUrlCredentials(message) : message;
+export function sanitizeLogValue<T>(
+  value: T,
+  seen: WeakMap<object, unknown> = new WeakMap(),
+): T {
+  if (typeof value === 'string') {
+    return redactUrlCredentials(value) as T;
+  }
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  if (value instanceof Date) {
+    return value;
+  }
+  if (value instanceof Error) {
+    if (
+      !URL_CREDENTIALS_PATTERN.test(value.message) &&
+      (!value.stack || !URL_CREDENTIALS_PATTERN.test(value.stack))
+    ) {
+      URL_CREDENTIALS_PATTERN.lastIndex = 0;
+      return value;
+    }
+    URL_CREDENTIALS_PATTERN.lastIndex = 0;
+    const sanitizedError = new Error(redactUrlCredentials(value.message));
+    sanitizedError.name = value.name;
+    if (value.stack) {
+      sanitizedError.stack = redactUrlCredentials(value.stack);
+    }
+    return sanitizedError as T;
+  }
+
+  const cached = seen.get(value);
+  if (cached !== undefined) {
+    return cached as T;
+  }
+
+  if (Array.isArray(value)) {
+    const copy: unknown[] = [];
+    seen.set(value, copy);
+    for (const item of value) {
+      copy.push(sanitizeLogValue(item, seen));
+    }
+    return copy as T;
+  }
+
+  const proto = Object.getPrototypeOf(value) as unknown;
+  if (proto !== Object.prototype && proto !== null) {
+    return value;
+  }
+
+  const copy: Record<string, unknown> = {};
+  seen.set(value, copy);
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    copy[key] = sanitizeLogValue(entry, seen);
+  }
+  return copy as T;
 }
 
 /**
  * Structured application logger aligned with NFR-OBS-001 and NFR-SEC-003.
  *
  * Emits compact JSON lines in production (or when LOG_FORMAT=json) and
- * human-readable logs in local development, automatically enriching records
- * with service, environment, requestId, and correlationId while redacting
- * sensitive keys and URL credentials.
+ * clean, column-aligned human-readable logs in local development,
+ * automatically enriching records with service, environment, requestId,
+ * and correlationId while redacting sensitive keys and URL credentials.
  */
 @Injectable()
 export class AppLogger extends ConsoleLogger {
@@ -72,10 +130,11 @@ export class AppLogger extends ConsoleLogger {
 
   constructor(env: EnvService) {
     const isJson = env.logFormat === 'json';
+    const noColor = Boolean(process.env.NO_COLOR);
     super({
       logLevels: resolveEnabledLogLevels(env.logLevel),
       json: isJson,
-      colors: !isJson && !env.isTest,
+      colors: !isJson && !env.isTest && !noColor,
       structuredParams: true,
       flattenParams: isJson,
       redact: {
@@ -85,6 +144,73 @@ export class AppLogger extends ConsoleLogger {
     });
     this.environment = env.nodeEnv;
     this.serviceName = SERVICE_NAME;
+  }
+
+  protected override printMessages(
+    messages: unknown[],
+    context = '',
+    logLevel: LogLevel = 'log',
+    writeStreamType?: 'stdout' | 'stderr',
+    errorStack?: unknown,
+    params?: Record<string, any>,
+  ): void {
+    if (this.options.json) {
+      super.printMessages(
+        messages,
+        context,
+        logLevel,
+        writeStreamType,
+        errorStack,
+        params,
+      );
+      return;
+    }
+
+    const colors = Boolean(this.options.colors);
+    const requestContext = getRequestContext();
+    const redactedParams = params
+      ? (sanitizeLogValue(this.redact(params)) as Record<string, unknown>)
+      : undefined;
+
+    for (const rawMessage of messages) {
+      const resolved = this.resolveMessage(rawMessage);
+      const redacted = this.redact(resolved);
+      const sanitized = sanitizeLogValue(redacted);
+      const timestampDiff = this.updateAndGetTimestampDiff();
+
+      const formatted = formatPrettyLogEntry({
+        logLevel,
+        message: sanitized,
+        context: context || undefined,
+        params: redactedParams,
+        traceContext: requestContext
+          ? {
+              requestId: requestContext.requestId,
+              correlationId: requestContext.correlationId,
+            }
+          : undefined,
+        timestamp: formatClockTimestamp(),
+        timestampDiff,
+        colors,
+      });
+
+      this.writeOutput(formatted, writeStreamType);
+
+      if (!errorStack && sanitized instanceof Error && sanitized.stack) {
+        this.printStackTrace(sanitized.stack);
+      }
+    }
+  }
+
+  protected override printStackTrace(stack: string): void {
+    if (!stack || this.options.json) {
+      return;
+    }
+    const sanitized = redactUrlCredentials(stack);
+    const formatted = formatStackTrace(sanitized, Boolean(this.options.colors));
+    if (formatted) {
+      this.writeOutput(formatted, 'stderr');
+    }
   }
 
   protected override getJsonLogObject(
@@ -112,10 +238,14 @@ export class AppLogger extends ConsoleLogger {
       typeof options.errorStack === 'string'
         ? redactUrlCredentials(options.errorStack)
         : options.errorStack;
+    const sanitizedParams = options.params
+      ? (sanitizeLogValue(options.params) as Record<string, any>)
+      : undefined;
 
-    const base = super.getJsonLogObject(sanitizeMessage(message), {
+    const base = super.getJsonLogObject(sanitizeLogValue(message), {
       ...options,
       errorStack: sanitizedErrorStack,
+      params: sanitizedParams,
     });
 
     if (base.error && typeof base.error === 'object') {
@@ -138,33 +268,19 @@ export class AppLogger extends ConsoleLogger {
     return enriched;
   }
 
-  protected override formatMessage(
-    logLevel: LogLevel,
-    message: unknown,
-    pidMessage: string,
-    formattedLogLevel: string,
-    contextMessage: string,
-    timestampDiff: string,
-    params?: Record<string, any>,
-  ): string {
-    const requestContext = getRequestContext();
-    const enrichedParams = requestContext
-      ? {
-          requestId: requestContext.requestId,
-          correlationId: requestContext.correlationId,
-          ...params,
-        }
-      : params;
-
-    return super.formatMessage(
-      logLevel,
-      sanitizeMessage(message),
-      pidMessage,
-      formattedLogLevel,
-      contextMessage,
-      timestampDiff,
-      enrichedParams,
-    );
+  private writeOutput(
+    chunk: string,
+    writeStreamType?: 'stdout' | 'stderr',
+  ): void {
+    if (this.options.forceConsole) {
+      if (writeStreamType === 'stderr') {
+        console.error(chunk.trimEnd());
+      } else {
+        console.log(chunk.trimEnd());
+      }
+      return;
+    }
+    process[writeStreamType ?? 'stdout'].write(chunk);
   }
 
   private sanitizeSerializedError(

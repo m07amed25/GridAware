@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
-import { AuthButton } from "@/components/auth/auth-primitives";
-import { apiRequest } from "@/lib/auth/client";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { apiRequest, broadcastSessionInvalidated } from "@/lib/auth/client";
 
 export function SignOutButton() {
   const router = useRouter();
@@ -16,24 +17,23 @@ export function SignOutButton() {
         method: "POST",
       });
     } finally {
-      if (typeof BroadcastChannel !== "undefined") {
-        const ch = new BroadcastChannel("gridaware:auth");
-        ch.postMessage({ type: "SESSION_INVALIDATED" });
-        ch.close();
-      }
-      router.push("/login");
+      broadcastSessionInvalidated("signed-out");
+      router.push("/login?reason=signed-out");
       router.refresh();
     }
   }
 
   return (
-    <AuthButton
+    <Button
       variant="secondary"
+      size="sm"
       loading={loading}
       loadingLabel="Signing out..."
       onClick={handleSignOut}
+      className="min-h-[40px]"
     >
-      Sign out
-    </AuthButton>
+      <LogOut className="h-4 w-4" aria-hidden="true" />
+      <span>Sign out</span>
+    </Button>
   );
 }

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Immutable EVARAX Brand Palette */
+  /* Immutable EVARAX Brand Palette (DESIGN.md §3.1 — exact HEX, never alter) */
   --color-yellow: #F4E952;
   --color-lime: #F6FA45;
   --color-gold: #FCCE35;
@@ -9,53 +9,129 @@
   --color-off-white: #E9ECF2;
   --color-white: #FFFFFF;
 
-  /* Derived Dark Neutral Surfaces */
+  /* Reviewed Primary CTA Interaction Tokens (DESIGN.md §14.2 — never reuse #F6FA45 for hover) */
+  --brand-primary-hover: #FAF173;
+  --brand-primary-active: #E3D840;
+
+  /* Derived Dark Neutral Surfaces (DESIGN.md §3.2) */
   --surface-canvas: #080808;
   --surface-1: #101010;
   --surface-2: #171717;
   --surface-3: #202020;
-  --surface-4: #2A2A2A;
+  --surface-4: #292929;
   --border-subtle: #2A2A2A;
   --border-default: #363636;
   --border-strong: #555555;
 
-  /* Text Hierarchy */
+  /* Text Hierarchy (DESIGN.md §3.2) */
   --text-primary: #E9ECF2;
   --text-strong: #FFFFFF;
-  --text-secondary: #B8BEC9;
+  --text-secondary: #B8BDC7;
   --text-muted: #9298A3;
-  --text-disabled: #666B75;
+  --text-disabled: #707680;
 
-  /* Semantic Operational Status Tokens (distinct from brand yellow) */
+  /* Semantic Operational Status Tokens (DESIGN.md §3.3 — distinct from brand accents) */
   --status-success: #35C58A;
   --status-success-bg: rgba(53, 197, 138, 0.12);
+  --status-success-border: rgba(53, 197, 138, 0.42);
   --status-warning: #F0B84B;
   --status-warning-bg: rgba(240, 184, 75, 0.12);
+  --status-warning-border: rgba(240, 184, 75, 0.42);
   --status-critical: #F06A6A;
   --status-critical-bg: rgba(240, 106, 106, 0.12);
+  --status-critical-border: rgba(240, 106, 106, 0.45);
   --status-info: #65A9E8;
   --status-info-bg: rgba(101, 169, 232, 0.12);
+  --status-info-border: rgba(101, 169, 232, 0.42);
   --status-offline: #9AA1AC;
   --status-unknown: #B3A4D8;
 
-  /* Layout & Rhythm */
-  --radius-control: 10px;
-  --radius-card: 14px;
+  /* Radii (DESIGN.md §9) */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-control: var(--radius-md);
+  --radius-card: var(--radius-lg);
+  --radius: var(--radius-md);
+
+  /* Focus Ring */
+  --focus-ring: var(--color-lime);
+
+  /* shadcn/ui Semantic Aliases Mapped Directly to EVARAX Tokens */
+  --background: var(--surface-canvas);
+  --foreground: var(--text-primary);
+  --card: var(--surface-1);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-2);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--color-yellow);
+  --primary-foreground: var(--color-black);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--surface-3);
+  --accent-foreground: var(--text-strong);
+  --destructive: var(--status-critical);
+  --destructive-foreground: var(--color-black);
+  --border: var(--border-subtle);
+  --input: var(--border-default);
+  --ring: var(--focus-ring);
 }
 
 @theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
   --color-canvas: var(--surface-canvas);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
   --color-border-subtle: var(--border-subtle);
   --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
   --color-brand-yellow: var(--color-yellow);
   --color-brand-lime: var(--color-lime);
   --color-brand-gold: var(--color-gold);
+  --color-brand-primary-hover: var(--brand-primary-hover);
+  --color-brand-primary-active: var(--brand-primary-active);
   --color-text-primary: var(--text-primary);
+  --color-text-strong: var(--text-strong);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-critical: var(--status-critical);
+  --color-status-info: var(--status-info);
+  --color-status-offline: var(--status-offline);
+  --color-status-unknown: var(--status-unknown);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -64,13 +140,22 @@ html {
   color-scheme: dark;
   background-color: var(--surface-canvas);
   color: var(--text-primary);
+  scrollbar-color: var(--border-default) var(--surface-canvas);
+  scrollbar-width: thin;
 }
 
 body {
   background-color: var(--surface-canvas);
   color: var(--text-primary);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-feature-settings: "kern" 1;
+  -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+input,
+textarea {
+  caret-color: var(--color-yellow);
 }
 
 ::selection {
@@ -79,8 +164,41 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-lime);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+/* Custom WebKit scrollbars matching EVARAX dark neutrals */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface-canvas);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border: 2px solid var(--surface-canvas);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* Subtle single-shot entrance for auth views (respects reduced motion) */
+@keyframes ga-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ga-enter {
+  animation: ga-fade-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
