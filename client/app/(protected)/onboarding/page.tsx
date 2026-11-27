@@ -86,9 +86,14 @@ async function OnboardingContent() {
 
           <div className="flex flex-wrap gap-3">
             <Button asChild>
+              <Link href="/onboarding/organization">
+                <span>Create an organization</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+            <Button asChild variant="secondary">
               <Link href="/app">
                 <span>Go to workspace overview</span>
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
             <Button asChild variant="secondary">

@@ -10,6 +10,10 @@ const authContractsPath = resolve(
   import.meta.dirname,
   '../../../specs/001-auth-identity-management/contracts/auth-openapi.yaml',
 );
+const rbacContractsPath = resolve(
+  import.meta.dirname,
+  '../../../specs/003-rbac-permission-management/contracts/rbac-openapi.yaml',
+);
 const schemasDir = resolve(contractsDir, 'schemas');
 const addFormats = addFormatsModule as unknown as (ajv: Ajv2020) => Ajv2020;
 
@@ -210,6 +214,36 @@ describe('docs/contracts machine-readable specifications', () => {
       expect(
         validate,
         `Failed to compile auth-openapi component schema "${schemaName}"`,
+      ).toBeTypeOf('function');
+    }
+  });
+
+  it('validates Phase 5.3 rbac-openapi.yaml structure, $refs, and component schemas', () => {
+    expect(existsSync(rbacContractsPath)).toBe(true);
+    const doc = loadDocument(rbacContractsPath);
+    expect(isRecord(doc)).toBe(true);
+    if (!isRecord(doc)) return;
+
+    expect(String(doc['openapi'])).toMatch(/^3\.1\./);
+    assertAllRefsResolve(doc, rbacContractsPath);
+
+    const components = doc['components'];
+    expect(isRecord(components)).toBe(true);
+    if (!isRecord(components) || !isRecord(components['schemas'])) {
+      throw new Error('Expected components.schemas in rbac-openapi.yaml');
+    }
+
+    const docUri = 'https://contracts.gridaware.internal/rbac-openapi.yaml';
+    const ajv = addFormats(new Ajv2020({ strict: false, allErrors: true }));
+    ajv.addSchema(doc, docUri);
+
+    for (const schemaName of Object.keys(components['schemas'])) {
+      const validate = ajv.getSchema(
+        `${docUri}#/components/schemas/${schemaName}`,
+      );
+      expect(
+        validate,
+        `Failed to compile rbac-openapi component schema "${schemaName}"`,
       ).toBeTypeOf('function');
     }
   });

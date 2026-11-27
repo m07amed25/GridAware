@@ -14,7 +14,19 @@ export interface PasswordResetEmailPayload {
   expiresInMinutes: number;
 }
 
+export interface OrganizationInvitationEmailPayload {
+  to: string;
+  organizationName: string;
+  inviterName: string;
+  role: string;
+  acceptUrl: string;
+  expiresInDays: number;
+}
+
 export interface MailerPort {
   sendVerificationEmail(payload: VerificationEmailPayload): Promise<void>;
   sendPasswordResetEmail(payload: PasswordResetEmailPayload): Promise<void>;
+  sendOrganizationInvitationEmail?(
+    payload: OrganizationInvitationEmailPayload,
+  ): Promise<void>;
 }

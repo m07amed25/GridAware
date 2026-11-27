@@ -3,10 +3,12 @@ import nodemailer, { type Transporter } from 'nodemailer';
 import { EnvService } from '../config/env.service.js';
 import type {
   MailerPort,
+  OrganizationInvitationEmailPayload,
   PasswordResetEmailPayload,
   VerificationEmailPayload,
 } from './mailer.port.js';
 import {
+  renderOrganizationInvitationEmail,
   renderPasswordResetEmail,
   renderVerificationEmail,
 } from './templates/render-templates.js';
@@ -32,6 +34,16 @@ export class SmtpMailerAdapter implements MailerPort, OnModuleDestroy {
     payload: PasswordResetEmailPayload,
   ): Promise<void> {
     const rendered = await renderPasswordResetEmail(payload);
+    await this.sendMail({
+      to: payload.to,
+      ...rendered,
+    });
+  }
+
+  async sendOrganizationInvitationEmail(
+    payload: OrganizationInvitationEmailPayload,
+  ): Promise<void> {
+    const rendered = await renderOrganizationInvitationEmail(payload);
     await this.sendMail({
       to: payload.to,
       ...rendered,

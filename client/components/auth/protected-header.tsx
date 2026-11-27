@@ -13,6 +13,7 @@ import {
   User,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { OrganizationSwitcher } from "@/components/authorization/organization-switcher";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,6 +88,8 @@ export function ProtectedHeader({ user }: { user: SafeUserProfile }) {
               className="h-7 w-7 sm:hidden"
             />
           </Link>
+
+          <OrganizationSwitcher />
 
           <nav
             aria-label="Primary navigation"

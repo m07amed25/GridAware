@@ -27,6 +27,34 @@ enum SessionRevokeReason {
   ACCOUNT_STATE_CHANGE
 }
 
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum MembershipRole {
+  OWNER
+  FACILITY_MANAGER
+  ENGINEER
+  TECHNICIAN
+  VIEWER
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  REMOVED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
 model User {
   id              String     @id @default(uuid()) @db.Uuid
   email           String     @db.VarChar(254)
@@ -38,13 +66,81 @@ model User {
   createdAt       DateTime   @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime   @updatedAt @db.Timestamptz(6)
 
-  sessions           AuthSession[]
-  emailVerifications EmailVerificationToken[]
-  passwordResets     PasswordResetToken[]
-  auditLogs          AuditLog[]               @relation("AuditActor")
+  sessions            AuthSession[]
+  emailVerifications  EmailVerificationToken[]
+  passwordResets      PasswordResetToken[]
+  memberships         Membership[]
+  sentInvitations     OrganizationInvitation[] @relation("InvitationSender")
+  acceptedInvitations OrganizationInvitation[] @relation("InvitationAcceptor")
+  auditLogs           AuditLog[]               @relation("AuditActor")
 
   @@index([status, createdAt])
   @@map("users")
+}
+
+model Organization {
+  id        String             @id @default(uuid()) @db.Uuid
+  name      String             @db.VarChar(120)
+  slug      String             @unique @db.VarChar(80)
+  status    OrganizationStatus @default(ACTIVE)
+  timezone  String             @default("UTC") @db.VarChar(64)
+  createdAt DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime           @updatedAt @db.Timestamptz(6)
+
+  memberships Membership[]
+  invitations OrganizationInvitation[]
+  auditLogs   AuditLog[]
+
+  @@index([status, createdAt])
+  @@map("organizations")
+}
+
+model OrganizationInvitation {
+  id               String           @id @default(uuid()) @db.Uuid
+  organizationId   String           @db.Uuid
+  email            String           @db.VarChar(254)
+  normalizedEmail  String           @db.VarChar(254)
+  role             MembershipRole
+  tokenHash        String           @unique @db.Char(64)
+  status           InvitationStatus @default(PENDING)
+  invitedByUserId  String           @db.Uuid
+  acceptedByUserId String?          @db.Uuid
+  expiresAt        DateTime         @db.Timestamptz(6)
+  acceptedAt       DateTime?        @db.Timestamptz(6)
+  revokedAt        DateTime?        @db.Timestamptz(6)
+  createdAt        DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime         @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation("InvitationSender", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+  acceptedBy   User?        @relation("InvitationAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, normalizedEmail, status])
+  @@map("organization_invitations")
+}
+
+model Membership {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @db.Uuid
+  userId         String           @db.Uuid
+  role           MembershipRole
+  status         MembershipStatus @default(ACTIVE)
+  suspendedAt    DateTime?        @db.Timestamptz(6)
+  removedAt      DateTime?        @db.Timestamptz(6)
+  createdAt      DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime         @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auditLogs    AuditLog[]   @relation("AuditActorMembership")
+
+  @@unique([organizationId, userId])
+  @@unique([organizationId, id])
+  @@index([organizationId, userId, status])
+  @@index([organizationId, role, status])
+  @@index([userId, status])
+  @@map("memberships")
 }
 
 model AuthSession {
@@ -99,21 +195,25 @@ model PasswordResetToken {
 }
 
 model AuditLog {
-  id             String   @id @default(uuid()) @db.Uuid
-  organizationId String?  @db.Uuid
-  actorUserId    String?  @db.Uuid
-  action         String   @db.VarChar(80)
-  entityType     String   @db.VarChar(60)
-  entityId       String?  @db.VarChar(128)
-  requestId      String?  @db.VarChar(128)
-  correlationId  String?  @db.VarChar(128)
-  metadata       Json?
-  occurredAt     DateTime @default(now()) @db.Timestamptz(6)
+  id                String   @id @default(uuid()) @db.Uuid
+  organizationId    String?  @db.Uuid
+  actorUserId       String?  @db.Uuid
+  actorMembershipId String?  @db.Uuid
+  action            String   @db.VarChar(80)
+  entityType        String   @db.VarChar(60)
+  entityId          String?  @db.VarChar(128)
+  requestId         String?  @db.VarChar(128)
+  correlationId     String?  @db.VarChar(128)
+  metadata          Json?
+  occurredAt        DateTime @default(now()) @db.Timestamptz(6)
 
-  actorUser User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  actorUser       User?         @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  actorMembership Membership?   @relation("AuditActorMembership", fields: [actorMembershipId], references: [id], onDelete: SetNull)
 
   @@index([actorUserId, occurredAt])
   @@index([organizationId, occurredAt])
+  @@index([organizationId, action, occurredAt])
   @@index([action, occurredAt])
   @@index([correlationId])
   @@map("audit_logs")

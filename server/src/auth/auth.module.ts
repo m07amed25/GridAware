@@ -36,6 +36,8 @@ import { TokenCryptoService } from './token-crypto.service.js';
     CookieService,
     AccessTokenGuard,
     CsrfGuard,
+    UsersModule,
+    SessionsModule,
   ],
 })
 export class AuthModule {}

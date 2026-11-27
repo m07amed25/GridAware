@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type {
   MailerPort,
+  OrganizationInvitationEmailPayload,
   PasswordResetEmailPayload,
   VerificationEmailPayload,
 } from './mailer.port.js';
@@ -26,6 +27,14 @@ export class ConsoleMailerAdapter implements MailerPort {
   ): Promise<void> {
     this.logger.log(
       `[DEV MAIL] Password reset email to=${payload.to} url=${payload.resetUrl} (expires in ${payload.expiresInMinutes}m)`,
+    );
+  }
+
+  async sendOrganizationInvitationEmail(
+    payload: OrganizationInvitationEmailPayload,
+  ): Promise<void> {
+    this.logger.log(
+      `[DEV MAIL] Organization invitation to=${payload.to} org="${payload.organizationName}" role=${payload.role} url=${payload.acceptUrl} (expires in ${payload.expiresInDays}d)`,
     );
   }
 }

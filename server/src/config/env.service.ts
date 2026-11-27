@@ -228,4 +228,8 @@ export class EnvService {
   get appUrl(): string {
     return this.env.APP_URL;
   }
+
+  get simulatorDemoControlEnabled(): boolean {
+    return this.env.SIMULATOR_DEMO_CONTROL_ENABLED ?? false;
+  }
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import React, { Suspense } from "react";
 import { ArrowRight, Compass, ShieldCheck } from "lucide-react";
+import { AccessibleOrganizationsCard } from "@/components/authorization/accessible-organizations-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +35,8 @@ async function AppHomeContent() {
           <span>Session active</span>
         </Badge>
       </div>
+
+      <AccessibleOrganizationsCard />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card className="flex flex-col justify-between">

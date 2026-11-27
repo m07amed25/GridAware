@@ -2,10 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EnvService } from '../config/env.service.js';
 import type {
   MailerPort,
+  OrganizationInvitationEmailPayload,
   PasswordResetEmailPayload,
   VerificationEmailPayload,
 } from './mailer.port.js';
 import {
+  renderOrganizationInvitationEmail,
   renderPasswordResetEmail,
   renderVerificationEmail,
 } from './templates/render-templates.js';
@@ -30,6 +32,16 @@ export class HttpMailerAdapter implements MailerPort {
     payload: PasswordResetEmailPayload,
   ): Promise<void> {
     const rendered = await renderPasswordResetEmail(payload);
+    await this.sendEmail({
+      to: payload.to,
+      ...rendered,
+    });
+  }
+
+  async sendOrganizationInvitationEmail(
+    payload: OrganizationInvitationEmailPayload,
+  ): Promise<void> {
+    const rendered = await renderOrganizationInvitationEmail(payload);
     await this.sendEmail({
       to: payload.to,
       ...rendered,

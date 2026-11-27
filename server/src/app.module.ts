@@ -4,13 +4,16 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuditLogsModule } from './audit-logs/audit-logs.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { AuthorizationModule } from './authorization/authorization.module.js';
 import { ExceptionsModule } from './common/exceptions/exceptions.module.js';
 import { EnvModule } from './config/env.module.js';
 import { EnvService } from './config/env.service.js';
 import { PrismaModule } from './database/prisma.module.js';
 import { HealthModule } from './health/health.module.js';
 import { LoggingModule } from './logging/logging.module.js';
+import { MembershipsModule } from './memberships/memberships.module.js';
 import { MqttModule } from './mqtt/mqtt.module.js';
+import { OrganizationsModule } from './organizations/organizations.module.js';
 import { RedisModule } from './redis/redis.module.js';
 import { TelemetryModule } from './telemetry/telemetry.module.js';
 
@@ -25,6 +28,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     RedisModule,
     AuditLogsModule,
     AuthModule,
+    AuthorizationModule,
+    OrganizationsModule,
+    MembershipsModule,
     MqttModule,
     TelemetryModule,
     HealthModule,
