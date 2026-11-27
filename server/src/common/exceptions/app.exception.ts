@@ -71,6 +71,48 @@ export class AppException extends HttpException {
     });
   }
 
+  static invalidCredentials(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.INVALID_CREDENTIALS,
+      detail,
+    });
+  }
+
+  static sessionExpired(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.SESSION_EXPIRED,
+      detail,
+    });
+  }
+
+  static accountNotActive(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.ACCOUNT_NOT_ACTIVE,
+      detail,
+    });
+  }
+
+  static emailUnavailable(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.EMAIL_UNAVAILABLE,
+      detail,
+    });
+  }
+
+  static invalidToken(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.INVALID_TOKEN,
+      detail,
+    });
+  }
+
+  static csrfInvalid(detail?: string): AppException {
+    return new AppException({
+      code: ErrorCode.CSRF_INVALID,
+      detail,
+    });
+  }
+
   static forbidden(detail?: string): AppException {
     return new AppException({
       code: ErrorCode.FORBIDDEN,

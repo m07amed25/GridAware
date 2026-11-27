@@ -1,6 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiServiceUnavailableResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AppException } from '../common/exceptions/app.exception.js';
 import { ErrorCode } from '../common/exceptions/error-codes.js';
+import { ProblemDetailsDto } from '../common/exceptions/problem-details.dto.js';
+import { LivenessReportDto, ReadinessReportDto } from './health.dto.js';
 import {
   HealthService,
   type LivenessReport,
@@ -13,21 +21,53 @@ import {
  * - GET /api/v1/health/live -> process liveness (never depends on external I/O)
  * - GET /api/v1/health/ready -> dependency readiness (PostgreSQL, Redis, MQTT)
  */
+@ApiTags('Health')
 @Controller('health')
 export class HealthController {
   constructor(private readonly health: HealthService) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'Service liveness check (alias)',
+    description:
+      'Returns process liveness without querying external dependencies.',
+  })
+  @ApiOkResponse({
+    description: 'Process is alive',
+    type: LivenessReportDto,
+  })
   getHealth(): LivenessReport {
     return this.health.getLiveness();
   }
 
   @Get('live')
+  @ApiOperation({
+    summary: 'Liveness probe',
+    description:
+      'Returns process liveness without querying external dependencies.',
+  })
+  @ApiOkResponse({
+    description: 'Process is alive',
+    type: LivenessReportDto,
+  })
   getLiveness(): LivenessReport {
     return this.health.getLiveness();
   }
 
   @Get('ready')
+  @ApiOperation({
+    summary: 'Readiness probe',
+    description:
+      'Checks connectivity to PostgreSQL, Redis, and the MQTT broker within the configured timeout.',
+  })
+  @ApiOkResponse({
+    description: 'All required dependencies are reachable',
+    type: ReadinessReportDto,
+  })
+  @ApiServiceUnavailableResponse({
+    description: 'One or more required dependencies are unavailable',
+    type: ProblemDetailsDto,
+  })
   async getReadiness(): Promise<ReadinessReport> {
     const report = await this.health.checkReadiness();
     if (report.status !== 'ok') {

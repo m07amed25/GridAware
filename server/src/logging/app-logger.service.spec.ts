@@ -58,6 +58,9 @@ describe('AppLogger', () => {
         NODE_ENV: 'production',
         LOG_FORMAT: 'json',
         LOG_LEVEL: 'log',
+        AUTH_ACCESS_TOKEN_SECRET: 'prod-logger-test-secret-at-least-32-chars',
+        MAIL_PROVIDER: 'resend',
+        MAIL_API_KEY: 're_test_123',
       }),
     );
 
@@ -108,6 +111,9 @@ describe('AppLogger', () => {
         NODE_ENV: 'production',
         LOG_FORMAT: 'json',
         LOG_LEVEL: 'warn',
+        AUTH_ACCESS_TOKEN_SECRET: 'prod-logger-test-secret-at-least-32-chars',
+        MAIL_PROVIDER: 'resend',
+        MAIL_API_KEY: 're_test_123',
       }),
     );
 

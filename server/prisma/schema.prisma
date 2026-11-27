@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +8,113 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum SessionRevokeReason {
+  USER_LOGOUT
+  USER_LOGOUT_ALL
+  USER_SESSION_REVOKE
+  PASSWORD_RESET
+  TOKEN_REUSE
+  MAX_SESSIONS_EVICTED
+  ACCOUNT_STATE_CHANGE
+}
+
+model User {
+  id              String     @id @default(uuid()) @db.Uuid
+  email           String     @db.VarChar(254)
+  normalizedEmail String     @unique @db.VarChar(254)
+  displayName     String     @db.VarChar(120)
+  passwordHash    String
+  status          UserStatus @default(PENDING_VERIFICATION)
+  emailVerifiedAt DateTime?  @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @db.Timestamptz(6)
+
+  sessions           AuthSession[]
+  emailVerifications EmailVerificationToken[]
+  passwordResets     PasswordResetToken[]
+  auditLogs          AuditLog[]               @relation("AuditActor")
+
+  @@index([status, createdAt])
+  @@map("users")
+}
+
+model AuthSession {
+  id                String               @id @default(uuid()) @db.Uuid
+  userId            String               @db.Uuid
+  refreshTokenHash  String               @unique @db.Char(64)
+  userAgent         String?              @db.VarChar(512)
+  ipHash            String?              @db.Char(64)
+  lastUsedAt        DateTime             @default(now()) @db.Timestamptz(6)
+  idleExpiresAt     DateTime             @db.Timestamptz(6)
+  absoluteExpiresAt DateTime             @db.Timestamptz(6)
+  revokedAt         DateTime?            @db.Timestamptz(6)
+  revokedReason     SessionRevokeReason?
+  createdAt         DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime             @updatedAt @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, idleExpiresAt])
+  @@index([userId, lastUsedAt])
+  @@map("auth_sessions")
+}
+
+model EmailVerificationToken {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @db.Uuid
+  tokenHash     String    @unique @db.Char(64)
+  expiresAt     DateTime  @db.Timestamptz(6)
+  usedAt        DateTime? @db.Timestamptz(6)
+  invalidatedAt DateTime? @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt, invalidatedAt, expiresAt])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @db.Uuid
+  tokenHash     String    @unique @db.Char(64)
+  expiresAt     DateTime  @db.Timestamptz(6)
+  usedAt        DateTime? @db.Timestamptz(6)
+  invalidatedAt DateTime? @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt, invalidatedAt, expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model AuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @db.Uuid
+  actorUserId    String?  @db.Uuid
+  action         String   @db.VarChar(80)
+  entityType     String   @db.VarChar(60)
+  entityId       String?  @db.VarChar(128)
+  requestId      String?  @db.VarChar(128)
+  correlationId  String?  @db.VarChar(128)
+  metadata       Json?
+  occurredAt     DateTime @default(now()) @db.Timestamptz(6)
+
+  actorUser User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, occurredAt])
+  @@index([organizationId, occurredAt])
+  @@index([action, occurredAt])
+  @@index([correlationId])
+  @@map("audit_logs")
 }

@@ -1,26 +1,95 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Immutable EVARAX Brand Palette */
+  --color-yellow: #F4E952;
+  --color-lime: #F6FA45;
+  --color-gold: #FCCE35;
+  --color-black: #080808;
+  --color-off-white: #E9ECF2;
+  --color-white: #FFFFFF;
+
+  /* Derived Dark Neutral Surfaces */
+  --surface-canvas: #080808;
+  --surface-1: #101010;
+  --surface-2: #171717;
+  --surface-3: #202020;
+  --surface-4: #2A2A2A;
+  --border-subtle: #2A2A2A;
+  --border-default: #363636;
+  --border-strong: #555555;
+
+  /* Text Hierarchy */
+  --text-primary: #E9ECF2;
+  --text-strong: #FFFFFF;
+  --text-secondary: #B8BEC9;
+  --text-muted: #9298A3;
+  --text-disabled: #666B75;
+
+  /* Semantic Operational Status Tokens (distinct from brand yellow) */
+  --status-success: #35C58A;
+  --status-success-bg: rgba(53, 197, 138, 0.12);
+  --status-warning: #F0B84B;
+  --status-warning-bg: rgba(240, 184, 75, 0.12);
+  --status-critical: #F06A6A;
+  --status-critical-bg: rgba(240, 106, 106, 0.12);
+  --status-info: #65A9E8;
+  --status-info-bg: rgba(101, 169, 232, 0.12);
+  --status-offline: #9AA1AC;
+  --status-unknown: #B3A4D8;
+
+  /* Layout & Rhythm */
+  --radius-control: 10px;
+  --radius-card: 14px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-canvas: var(--surface-canvas);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-brand-yellow: var(--color-yellow);
+  --color-brand-lime: var(--color-lime);
+  --color-brand-gold: var(--color-gold);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
+  background-color: var(--surface-canvas);
+  color: var(--text-primary);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--surface-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background-color: var(--color-yellow);
+  color: var(--color-black);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-lime);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

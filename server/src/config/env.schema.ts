@@ -39,6 +39,60 @@ const optionalNonEmptyString = z.preprocess(
   z.string().min(1).optional(),
 );
 
+function booleanSchema(defaultValue?: boolean) {
+  return z.preprocess(
+    (value) => {
+      const normalized = emptyToUndefined(value);
+      if (normalized === undefined) {
+        return defaultValue;
+      }
+      if (typeof normalized === 'boolean') {
+        return normalized;
+      }
+      if (typeof normalized === 'string') {
+        const lower = normalized.toLowerCase();
+        if (lower === 'true') {
+          return true;
+        }
+        if (lower === 'false') {
+          return false;
+        }
+      }
+      return normalized;
+    },
+    defaultValue === undefined
+      ? z
+          .boolean({
+            error: () => 'Expected "true" or "false"',
+          })
+          .optional()
+      : z.boolean({
+          error: () => 'Expected "true" or "false"',
+        }),
+  );
+}
+
+function intRangeSchema(
+  defaultValue: number,
+  min: number,
+  max: number,
+) {
+  const message = `Expected an integer between ${min} and ${max}`;
+  return z.preprocess((value) => {
+    const normalized = emptyToUndefined(value);
+    if (normalized === undefined) {
+      return defaultValue;
+    }
+    if (typeof normalized === 'number') {
+      return normalized;
+    }
+    if (typeof normalized === 'string' && /^-?\d+$/.test(normalized)) {
+      return Number.parseInt(normalized, 10);
+    }
+    return Number.NaN;
+  }, z.int(message).min(min, message).max(max, message));
+}
+
 function urlWithProtocols(protocols: readonly string[], label: string) {
   const allowed = protocols.map((p) => `${p}//`).join(', ');
   return z.string().superRefine((value, ctx) => {
@@ -99,6 +153,31 @@ const logFormatSchema = z.preprocess(
       : normalized;
   },
   z.enum(['json', 'pretty']).optional(),
+);
+
+const swaggerEnabledSchema = z.preprocess(
+  (value) => {
+    const normalized = emptyToUndefined(value);
+    if (normalized === undefined) {
+      return true;
+    }
+    if (typeof normalized === 'boolean') {
+      return normalized;
+    }
+    if (typeof normalized === 'string') {
+      const lower = normalized.toLowerCase();
+      if (lower === 'true') {
+        return true;
+      }
+      if (lower === 'false') {
+        return false;
+      }
+    }
+    return normalized;
+  },
+  z.boolean({
+    error: () => 'Expected "true" or "false"',
+  }),
 );
 
 const healthCheckTimeoutSchema = z.preprocess((value) => {
@@ -205,6 +284,7 @@ export const serverEnvSchema = z
     NODE_ENV: nodeEnvSchema,
     PORT: portSchema,
     CORS_ORIGIN: corsOriginSchema,
+    SWAGGER_ENABLED: swaggerEnabledSchema,
     LOG_LEVEL: logLevelSchema,
     LOG_FORMAT: logFormatSchema,
     HEALTH_CHECK_TIMEOUT_MS: healthCheckTimeoutSchema,
@@ -226,6 +306,63 @@ export const serverEnvSchema = z
     OBSERVE_APP_KEY: optionalNonEmptyString,
     OBSERVE_APP_SECRET: optionalNonEmptyString,
     OBSERVE_ENDPOINT: optionalUrl(httpUrlSchema),
+    AUTH_ACCESS_TOKEN_SECRET: optionalNonEmptyString,
+    AUTH_ACCESS_TOKEN_TTL: z.preprocess(
+      (v) => emptyToUndefined(v) ?? '15m',
+      z.string().regex(/^\d+[smhd]$/, 'Expected duration like 15m or 900s'),
+    ),
+    AUTH_SESSION_IDLE_TTL_DAYS: intRangeSchema(14, 1, 90),
+    AUTH_SESSION_ABSOLUTE_TTL_DAYS: intRangeSchema(30, 1, 365),
+    AUTH_MAX_ACTIVE_SESSIONS: intRangeSchema(10, 1, 50),
+    AUTH_ISSUER: z.preprocess(
+      (v) => emptyToUndefined(v) ?? 'http://localhost:3001',
+      z.string().min(1),
+    ),
+    AUTH_AUDIENCE: z.preprocess(
+      (v) => emptyToUndefined(v) ?? 'gridaware-web',
+      z.string().min(1),
+    ),
+    COOKIE_SECURE: booleanSchema(undefined),
+    COOKIE_SAME_SITE: z.preprocess(
+      (v) => {
+        const normalized = emptyToUndefined(v);
+        return typeof normalized === 'string'
+          ? normalized.toLowerCase()
+          : (normalized ?? 'lax');
+      },
+      z.enum(['lax', 'strict', 'none']),
+    ),
+    COOKIE_DOMAIN: optionalNonEmptyString,
+    AUTH_RATE_LIMIT_WINDOW_SEC: intRangeSchema(900, 10, 86400),
+    AUTH_RATE_LIMIT_LOGIN_IP_MAX: intRangeSchema(10, 1, 1000),
+    AUTH_RATE_LIMIT_LOGIN_ACCOUNT_MAX: intRangeSchema(5, 1, 1000),
+    AUTH_RATE_LIMIT_REGISTER_IP_MAX: intRangeSchema(5, 1, 1000),
+    AUTH_RATE_LIMIT_REGISTER_ACCOUNT_MAX: intRangeSchema(3, 1, 1000),
+    AUTH_RATE_LIMIT_VERIFY_IP_MAX: intRangeSchema(5, 1, 1000),
+    AUTH_RATE_LIMIT_VERIFY_ACCOUNT_MAX: intRangeSchema(3, 1, 1000),
+    AUTH_RATE_LIMIT_RESET_IP_MAX: intRangeSchema(5, 1, 1000),
+    AUTH_RATE_LIMIT_RESET_ACCOUNT_MAX: intRangeSchema(3, 1, 1000),
+    AUTH_RATE_LIMIT_REFRESH_IP_MAX: intRangeSchema(30, 1, 1000),
+    AUTH_RATE_LIMIT_REFRESH_WINDOW_SEC: intRangeSchema(300, 10, 86400),
+    MAIL_PROVIDER: z.preprocess(
+      (v) => {
+        const normalized = emptyToUndefined(v);
+        return typeof normalized === 'string'
+          ? normalized.toLowerCase()
+          : (normalized ?? 'console');
+      },
+      z.enum(['console', 'resend', 'http']),
+    ),
+    MAIL_FROM: z.preprocess(
+      (v) => emptyToUndefined(v) ?? 'no-reply@gridaware.local',
+      z.string().min(3),
+    ),
+    MAIL_API_KEY: optionalNonEmptyString,
+    MAIL_API_URL: optionalUrl(httpUrlSchema),
+    APP_URL: z.preprocess(
+      (v) => emptyToUndefined(v) ?? 'http://localhost:3000',
+      httpUrlSchema,
+    ),
   })
   .superRefine((env, ctx) => {
     const hasKey = env.OBSERVE_APP_KEY !== undefined;
@@ -241,6 +378,62 @@ export const serverEnvSchema = z
         code: 'custom',
         path: ['OBSERVE_APP_KEY'],
         message: 'Required when OBSERVE_APP_SECRET is set',
+      });
+    }
+
+    if (
+      env.NODE_ENV === 'production' &&
+      (!env.AUTH_ACCESS_TOKEN_SECRET || env.AUTH_ACCESS_TOKEN_SECRET.length < 32)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['AUTH_ACCESS_TOKEN_SECRET'],
+        message:
+          'Required in production and must be at least 32 characters long',
+      });
+    } else if (
+      env.AUTH_ACCESS_TOKEN_SECRET !== undefined &&
+      env.AUTH_ACCESS_TOKEN_SECRET.length < 32
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['AUTH_ACCESS_TOKEN_SECRET'],
+        message: 'Must be at least 32 characters long when provided',
+      });
+    }
+
+    if (env.AUTH_SESSION_ABSOLUTE_TTL_DAYS < env.AUTH_SESSION_IDLE_TTL_DAYS) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['AUTH_SESSION_ABSOLUTE_TTL_DAYS'],
+        message:
+          'Must be greater than or equal to AUTH_SESSION_IDLE_TTL_DAYS',
+      });
+    }
+
+    const effectiveCookieSecure =
+      env.COOKIE_SECURE ?? env.NODE_ENV === 'production';
+    if (env.COOKIE_SAME_SITE === 'none' && !effectiveCookieSecure) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['COOKIE_SECURE'],
+        message: 'Must be true when COOKIE_SAME_SITE is "none"',
+      });
+    }
+
+    if (env.NODE_ENV === 'production' && env.MAIL_PROVIDER === 'console') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['MAIL_PROVIDER'],
+        message: 'MAIL_PROVIDER="console" is not allowed in production',
+      });
+    }
+
+    if (env.MAIL_PROVIDER !== 'console' && !env.MAIL_API_KEY) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['MAIL_API_KEY'],
+        message: 'Required when MAIL_PROVIDER is not "console"',
       });
     }
   });

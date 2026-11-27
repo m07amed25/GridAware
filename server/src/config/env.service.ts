@@ -38,6 +38,10 @@ export class EnvService {
     return this.env.CORS_ORIGIN;
   }
 
+  get swaggerEnabled(): boolean {
+    return this.env.SWAGGER_ENABLED;
+  }
+
   get logLevel(): AppLogLevel {
     if (this.env.LOG_LEVEL) {
       return this.env.LOG_LEVEL;
@@ -96,5 +100,112 @@ export class EnvService {
 
   get observeEndpoint(): string | undefined {
     return this.env.OBSERVE_ENDPOINT;
+  }
+
+  get authAccessTokenSecret(): string {
+    return (
+      this.env.AUTH_ACCESS_TOKEN_SECRET ??
+      'gridaware-dev-only-access-secret-min-32-chars'
+    );
+  }
+
+  get authAccessTokenTtl(): string {
+    return this.env.AUTH_ACCESS_TOKEN_TTL;
+  }
+
+  get authSessionIdleTtlDays(): number {
+    return this.env.AUTH_SESSION_IDLE_TTL_DAYS;
+  }
+
+  get authSessionAbsoluteTtlDays(): number {
+    return this.env.AUTH_SESSION_ABSOLUTE_TTL_DAYS;
+  }
+
+  get authMaxActiveSessions(): number {
+    return this.env.AUTH_MAX_ACTIVE_SESSIONS;
+  }
+
+  get authIssuer(): string {
+    return this.env.AUTH_ISSUER;
+  }
+
+  get authAudience(): string {
+    return this.env.AUTH_AUDIENCE;
+  }
+
+  get cookieSecure(): boolean {
+    return this.env.COOKIE_SECURE ?? this.isProduction;
+  }
+
+  get cookieSameSite(): 'lax' | 'strict' | 'none' {
+    return this.env.COOKIE_SAME_SITE;
+  }
+
+  get cookieDomain(): string | undefined {
+    return this.env.COOKIE_DOMAIN;
+  }
+
+  get authRateLimitWindowSec(): number {
+    return this.env.AUTH_RATE_LIMIT_WINDOW_SEC;
+  }
+
+  get authRateLimitLoginIpMax(): number {
+    return this.env.AUTH_RATE_LIMIT_LOGIN_IP_MAX;
+  }
+
+  get authRateLimitLoginAccountMax(): number {
+    return this.env.AUTH_RATE_LIMIT_LOGIN_ACCOUNT_MAX;
+  }
+
+  get authRateLimitRegisterIpMax(): number {
+    return this.env.AUTH_RATE_LIMIT_REGISTER_IP_MAX;
+  }
+
+  get authRateLimitRegisterAccountMax(): number {
+    return this.env.AUTH_RATE_LIMIT_REGISTER_ACCOUNT_MAX;
+  }
+
+  get authRateLimitVerifyIpMax(): number {
+    return this.env.AUTH_RATE_LIMIT_VERIFY_IP_MAX;
+  }
+
+  get authRateLimitVerifyAccountMax(): number {
+    return this.env.AUTH_RATE_LIMIT_VERIFY_ACCOUNT_MAX;
+  }
+
+  get authRateLimitResetIpMax(): number {
+    return this.env.AUTH_RATE_LIMIT_RESET_IP_MAX;
+  }
+
+  get authRateLimitResetAccountMax(): number {
+    return this.env.AUTH_RATE_LIMIT_RESET_ACCOUNT_MAX;
+  }
+
+  get authRateLimitRefreshIpMax(): number {
+    return this.env.AUTH_RATE_LIMIT_REFRESH_IP_MAX;
+  }
+
+  get authRateLimitRefreshWindowSec(): number {
+    return this.env.AUTH_RATE_LIMIT_REFRESH_WINDOW_SEC;
+  }
+
+  get mailProvider(): 'console' | 'resend' | 'http' {
+    return this.env.MAIL_PROVIDER;
+  }
+
+  get mailFrom(): string {
+    return this.env.MAIL_FROM;
+  }
+
+  get mailApiKey(): string | undefined {
+    return this.env.MAIL_API_KEY;
+  }
+
+  get mailApiUrl(): string | undefined {
+    return this.env.MAIL_API_URL;
+  }
+
+  get appUrl(): string {
+    return this.env.APP_URL;
   }
 }

@@ -1,0 +1,640 @@
+openapi: 3.1.0
+info:
+  title: GridAware Phase 5.1 — Authentication & Identity API
+  version: 1.0.0
+  description: >-
+    Versioned REST contract for Phase 5.1 Authentication & Identity Management
+    under /api/v1. Uses HttpOnly cookies (ga_access, ga_refresh) plus a
+    double-submit CSRF token (ga_csrf cookie + X-CSRF-Token header) and RFC 7807
+    ProblemDetails error responses.
+servers:
+  - url: http://localhost:3001/api/v1
+    description: Local NestJS server
+  - url: http://localhost:3000/api/v1
+    description: Next.js same-origin /api rewrite proxy
+tags:
+  - name: Auth
+    description: Registration, login, session rotation, verification, and password reset
+  - name: Identity
+    description: Authenticated user profile and forward-compatible /me alias
+paths:
+  /auth/csrf:
+    get:
+      tags: [Auth]
+      summary: Issue or refresh CSRF double-submit cookie and token
+      security: []
+      responses:
+        '200':
+          description: CSRF token issued and ga_csrf cookie set
+          headers:
+            Set-Cookie:
+              description: Sets ga_csrf non-HttpOnly cookie
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CsrfTokenResponse' }
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new global user account in PENDING_VERIFICATION status
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeaderOptionalBootstrap'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: User registered; verification email queued/dispatched
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisterResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/EmailUnavailable' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate an ACTIVE user and issue session cookies
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeaderOptionalBootstrap'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Authenticated; sets ga_access, ga_refresh, and ga_csrf cookies
+          headers:
+            Set-Cookie:
+              description: Sets HttpOnly ga_access and ga_refresh cookies plus ga_csrf
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthUserResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/InvalidCredentials' }
+        '403': { $ref: '#/components/responses/AccountNotActive' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Atomically rotate refresh token and issue a new access token cookie
+      security:
+        - refreshCookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      responses:
+        '200':
+          description: Session rotated; new ga_access, ga_refresh, and ga_csrf cookies set
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionRefreshResponse' }
+        '401': { $ref: '#/components/responses/SessionExpired' }
+        '403': { $ref: '#/components/responses/ForbiddenOrAccountNotActive' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke current session (if present) and clear auth cookies
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      responses:
+        '200':
+          description: Current session revoked and cookies cleared
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActionAckResponse' }
+        '403': { $ref: '#/components/responses/CsrfInvalid' }
+
+  /auth/logout-all:
+    post:
+      tags: [Auth]
+      summary: Revoke all active sessions for the current user and clear cookies
+      security:
+        - accessCookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      responses:
+        '200':
+          description: All active sessions for user revoked
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LogoutAllResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/CsrfInvalid' }
+
+  /auth/me:
+    get:
+      tags: [Auth, Identity]
+      summary: Return current authenticated user's safe profile
+      security:
+        - accessCookieAuth: []
+      responses:
+        '200':
+          description: Safe user profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthUserResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/AccountNotActive' }
+
+  /me:
+    get:
+      tags: [Identity]
+      summary: Forward-compatible Phase 3.3 /me alias returning safe user profile and empty memberships array until Phase 5.2
+      security:
+        - accessCookieAuth: []
+      responses:
+        '200':
+          description: Safe user profile with memberships list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MeWithMembershipsResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/AccountNotActive' }
+
+  /auth/sessions:
+    get:
+      tags: [Auth]
+      summary: List active sessions owned by the current authenticated user
+      security:
+        - accessCookieAuth: []
+      responses:
+        '200':
+          description: Owned active sessions ordered by most recently used
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionListResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /auth/sessions/{sessionId}:
+    delete:
+      tags: [Auth]
+      summary: Revoke a single active session owned by the current user
+      security:
+        - accessCookieAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      responses:
+        '200':
+          description: Owned session revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActionAckResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/CsrfInvalid' }
+        '404': { $ref: '#/components/responses/ResourceNotFound' }
+
+  /auth/email-verification/resend:
+    post:
+      tags: [Auth]
+      summary: Request a new email-verification message (non-enumerating, invalidates prior unused links)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeaderOptionalBootstrap'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmailOnlyRequest' }
+      responses:
+        '202':
+          description: Generic non-enumerating acceptance
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GenericMessageResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/email-verification/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm email ownership with a single-use verification token
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeaderOptionalBootstrap'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TokenConfirmRequest' }
+      responses:
+        '200':
+          description: Email verified and user status transitioned to ACTIVE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActionAckResponse' }
+        '400': { $ref: '#/components/responses/InvalidToken' }
+
+  /auth/password-reset/request:
+    post:
+      tags: [Auth]
+      summary: Request a password-reset message (non-enumerating, invalidates prior unused links)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeaderOptionalBootstrap'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmailOnlyRequest' }
+      responses:
+        '202':
+          description: Generic non-enumerating acceptance
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GenericMessageResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/password-reset/confirm:
+    post:
+      tags: [Auth]
+      summary: Set a new passphrase with a single-use reset token and revoke all existing user sessions
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeaderOptionalBootstrap'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetPasswordConfirmRequest' }
+      responses:
+        '200':
+          description: Passphrase updated and all prior sessions revoked
+          headers:
+            Set-Cookie:
+              description: Clears any active auth cookies on the current client
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActionAckResponse' }
+        '400': { $ref: '#/components/responses/InvalidTokenOrValidation' }
+
+components:
+  securitySchemes:
+    accessCookieAuth:
+      type: apiKey
+      in: cookie
+      name: ga_access
+      description: Short-lived (15m) HttpOnly signed JWT access cookie
+    refreshCookieAuth:
+      type: apiKey
+      in: cookie
+      name: ga_refresh
+      description: Rotating HttpOnly opaque session credential (<sessionId>.<secret>) scoped to /api/v1/auth
+
+  parameters:
+    CsrfTokenHeader:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      description: Must match the ga_csrf double-submit cookie value
+      schema:
+        type: string
+        minLength: 32
+        maxLength: 128
+    CsrfTokenHeaderOptionalBootstrap:
+      name: X-CSRF-Token
+      in: header
+      required: false
+      description: Required whenever auth/csrf cookies are sent; Origin allowlist is enforced on all browser POSTs
+      schema:
+        type: string
+        minLength: 32
+        maxLength: 128
+
+  schemas:
+    ResponseMeta:
+      type: object
+      additionalProperties: false
+      required: [requestId, servedAt]
+      properties:
+        requestId: { type: string, example: req_01JCV8Z0Q7K1 }
+        servedAt: { type: string, format: date-time }
+
+    UserStatus:
+      type: string
+      enum: [PENDING_VERIFICATION, ACTIVE, SUSPENDED, DEACTIVATED]
+
+    SafeUserProfile:
+      type: object
+      additionalProperties: false
+      required: [id, email, displayName, status, emailVerified]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email, maxLength: 254 }
+        displayName: { type: string, minLength: 2, maxLength: 120 }
+        status: { $ref: '#/components/schemas/UserStatus' }
+        emailVerified: { type: boolean }
+
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, displayName]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 12, maxLength: 128 }
+        displayName: { type: string, minLength: 2, maxLength: 120 }
+
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 1, maxLength: 128 }
+
+    EmailOnlyRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+
+    TokenConfirmRequest:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token: { type: string, minLength: 32, maxLength: 256 }
+
+    ResetPasswordConfirmRequest:
+      type: object
+      additionalProperties: false
+      required: [token, newPassword]
+      properties:
+        token: { type: string, minLength: 32, maxLength: 256 }
+        newPassword: { type: string, minLength: 12, maxLength: 128 }
+
+    SessionSummary:
+      type: object
+      additionalProperties: false
+      required: [id, userAgent, createdAt, lastUsedAt, idleExpiresAt, absoluteExpiresAt, isCurrent]
+      properties:
+        id: { type: string, format: uuid }
+        userAgent: { type: ['string', 'null'] }
+        createdAt: { type: string, format: date-time }
+        lastUsedAt: { type: string, format: date-time }
+        idleExpiresAt: { type: string, format: date-time }
+        absoluteExpiresAt: { type: string, format: date-time }
+        isCurrent: { type: boolean }
+
+    CsrfTokenResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [csrfToken]
+          properties:
+            csrfToken: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    RegisterResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [user, verificationRequired]
+          properties:
+            user: { $ref: '#/components/schemas/SafeUserProfile' }
+            verificationRequired: { type: boolean, const: true }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    AuthUserResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/SafeUserProfile' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    MeWithMembershipsResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [id, email, displayName, status, emailVerified, memberships]
+          properties:
+            id: { type: string, format: uuid }
+            email: { type: string, format: email }
+            displayName: { type: string }
+            status: { $ref: '#/components/schemas/UserStatus' }
+            emailVerified: { type: boolean }
+            memberships:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [organizationId, organizationName, role, status]
+                properties:
+                  organizationId: { type: string, format: uuid }
+                  organizationName: { type: string }
+                  role: { type: string }
+                  status: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    SessionRefreshResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [sessionId, idleExpiresAt, absoluteExpiresAt]
+          properties:
+            sessionId: { type: string, format: uuid }
+            idleExpiresAt: { type: string, format: date-time }
+            absoluteExpiresAt: { type: string, format: date-time }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    SessionListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          maxItems: 10
+          items: { $ref: '#/components/schemas/SessionSummary' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    ActionAckResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [success]
+          properties:
+            success: { type: boolean, const: true }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    LogoutAllResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [revokedCount]
+          properties:
+            revokedCount: { type: integer, minimum: 0 }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    GenericMessageResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [accepted, message]
+          properties:
+            accepted: { type: boolean, const: true }
+            message: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        field: { type: string }
+        code: { type: string }
+        message: { type: string }
+
+    ProblemDetails:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, code, detail, instance, requestId]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - INVALID_CREDENTIALS
+            - UNAUTHENTICATED
+            - SESSION_EXPIRED
+            - ACCOUNT_NOT_ACTIVE
+            - CSRF_INVALID
+            - FORBIDDEN
+            - RESOURCE_NOT_FOUND
+            - EMAIL_UNAVAILABLE
+            - INVALID_TOKEN
+            - RATE_LIMITED
+            - DEPENDENCY_UNAVAILABLE
+            - INTERNAL_ERROR
+        detail: { type: string }
+        instance: { type: string }
+        requestId: { type: string }
+        errors:
+          type: array
+          items: { $ref: '#/components/schemas/FieldError' }
+
+  responses:
+    ValidationError:
+      description: Request validation failed (400 VALIDATION_ERROR)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    InvalidToken:
+      description: Expired, superseded, already-used, or malformed token (400 INVALID_TOKEN)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    InvalidTokenOrValidation:
+      description: Invalid reset token or non-compliant passphrase (400 INVALID_TOKEN | VALIDATION_ERROR)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    InvalidCredentials:
+      description: Unknown email or wrong passphrase — identical generic response (401 INVALID_CREDENTIALS)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Unauthenticated:
+      description: Missing or invalid access credential (401 UNAUTHENTICATED)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    SessionExpired:
+      description: Refresh session expired, revoked, or token replay detected (401 SESSION_EXPIRED)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    AccountNotActive:
+      description: Account is PENDING_VERIFICATION, SUSPENDED, or DEACTIVATED (403 ACCOUNT_NOT_ACTIVE)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    CsrfInvalid:
+      description: Missing or mismatched CSRF token or disallowed Origin (403 CSRF_INVALID)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    ForbiddenOrAccountNotActive:
+      description: CSRF failure or non-active account (403 CSRF_INVALID | ACCOUNT_NOT_ACTIVE)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    ResourceNotFound:
+      description: Session does not exist or is owned by another user (404 RESOURCE_NOT_FOUND)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    EmailUnavailable:
+      description: Normalized email is already registered (409 EMAIL_UNAVAILABLE)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    RateLimited:
+      description: Sliding-window rate limit exceeded (429 RATE_LIMITED)
+      headers:
+        Retry-After:
+          description: Seconds until the caller may retry
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }

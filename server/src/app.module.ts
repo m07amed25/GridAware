@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { createObserveModule } from '@nestjs/observe';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { AuditLogsModule } from './audit-logs/audit-logs.module.js';
+import { AuthModule } from './auth/auth.module.js';
 import { ExceptionsModule } from './common/exceptions/exceptions.module.js';
 import { EnvModule } from './config/env.module.js';
 import { EnvService } from './config/env.service.js';
@@ -21,6 +23,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     ExceptionsModule,
     PrismaModule,
     RedisModule,
+    AuditLogsModule,
+    AuthModule,
     MqttModule,
     TelemetryModule,
     HealthModule,

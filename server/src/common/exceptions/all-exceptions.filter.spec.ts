@@ -144,6 +144,29 @@ describe('AllExceptionsFilter', () => {
     });
   });
 
+  it('maps Phase 5.1 auth AppException factories to RFC 7807 ProblemDetails', () => {
+    vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
+    const filter = new AllExceptionsFilter();
+    const cases = [
+      { ex: AppException.invalidCredentials(), status: 401, code: ErrorCode.INVALID_CREDENTIALS },
+      { ex: AppException.sessionExpired(), status: 401, code: ErrorCode.SESSION_EXPIRED },
+      { ex: AppException.accountNotActive(), status: 403, code: ErrorCode.ACCOUNT_NOT_ACTIVE },
+      { ex: AppException.emailUnavailable(), status: 409, code: ErrorCode.EMAIL_UNAVAILABLE },
+      { ex: AppException.invalidToken(), status: 400, code: ErrorCode.INVALID_TOKEN },
+      { ex: AppException.csrfInvalid(), status: 403, code: ErrorCode.CSRF_INVALID },
+    ];
+
+    for (const item of cases) {
+      const http = createHttpHost({ requestId: 'req_auth' });
+      filter.catch(item.ex, http.host);
+      expect(http.getStatus()).toBe(item.status);
+      expect(http.getBody()).toMatchObject({
+        code: item.code,
+        status: item.status,
+      });
+    }
+  });
+
   it('redacts internal details and stack traces for 5xx and unexpected errors', () => {
     const errorSpy = vi
       .spyOn(Logger.prototype, 'error')

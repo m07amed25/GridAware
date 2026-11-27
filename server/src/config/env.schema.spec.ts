@@ -20,6 +20,7 @@ describe('validateServerEnv', () => {
       NODE_ENV: 'development',
       PORT: 3001,
       CORS_ORIGIN: 'http://localhost:3000',
+      SWAGGER_ENABLED: true,
       LOG_LEVEL: undefined,
       LOG_FORMAT: undefined,
       HEALTH_CHECK_TIMEOUT_MS: 2000,
@@ -32,6 +33,32 @@ describe('validateServerEnv', () => {
       OBSERVE_APP_KEY: undefined,
       OBSERVE_APP_SECRET: undefined,
       OBSERVE_ENDPOINT: undefined,
+      AUTH_ACCESS_TOKEN_SECRET: undefined,
+      AUTH_ACCESS_TOKEN_TTL: '15m',
+      AUTH_SESSION_IDLE_TTL_DAYS: 14,
+      AUTH_SESSION_ABSOLUTE_TTL_DAYS: 30,
+      AUTH_MAX_ACTIVE_SESSIONS: 10,
+      AUTH_ISSUER: 'http://localhost:3001',
+      AUTH_AUDIENCE: 'gridaware-web',
+      COOKIE_SECURE: undefined,
+      COOKIE_SAME_SITE: 'lax',
+      COOKIE_DOMAIN: undefined,
+      AUTH_RATE_LIMIT_WINDOW_SEC: 900,
+      AUTH_RATE_LIMIT_LOGIN_IP_MAX: 10,
+      AUTH_RATE_LIMIT_LOGIN_ACCOUNT_MAX: 5,
+      AUTH_RATE_LIMIT_REGISTER_IP_MAX: 5,
+      AUTH_RATE_LIMIT_REGISTER_ACCOUNT_MAX: 3,
+      AUTH_RATE_LIMIT_VERIFY_IP_MAX: 5,
+      AUTH_RATE_LIMIT_VERIFY_ACCOUNT_MAX: 3,
+      AUTH_RATE_LIMIT_RESET_IP_MAX: 5,
+      AUTH_RATE_LIMIT_RESET_ACCOUNT_MAX: 3,
+      AUTH_RATE_LIMIT_REFRESH_IP_MAX: 30,
+      AUTH_RATE_LIMIT_REFRESH_WINDOW_SEC: 300,
+      MAIL_PROVIDER: 'console',
+      MAIL_FROM: 'no-reply@gridaware.local',
+      MAIL_API_KEY: undefined,
+      MAIL_API_URL: undefined,
+      APP_URL: 'http://localhost:3000',
     });
   });
 
@@ -75,6 +102,11 @@ describe('validateServerEnv', () => {
       OBSERVE_APP_KEY: 'obs_key_123',
       OBSERVE_APP_SECRET: 'obs_secret_456',
       OBSERVE_ENDPOINT: 'https://observe-proxy.gridaware.io',
+      AUTH_ACCESS_TOKEN_SECRET: 'super-strong-production-secret-at-least-32-chars',
+      MAIL_PROVIDER: 'resend',
+      MAIL_API_KEY: 're_live_123456',
+      MAIL_FROM: 'auth@gridaware.io',
+      APP_URL: 'https://app.gridaware.io',
     });
 
     expect(env.NODE_ENV).toBe('production');
@@ -206,6 +238,55 @@ describe('validateServerEnv', () => {
         HEALTH_CHECK_TIMEOUT_MS: '60000',
       }),
     ).toThrow(EnvValidationError);
+  });
+
+  it('parses SWAGGER_ENABLED boolean values and rejects invalid values', () => {
+    expect(
+      validateServerEnv({ ...BASE_VALID_ENV, SWAGGER_ENABLED: 'false' })
+        .SWAGGER_ENABLED,
+    ).toBe(false);
+    expect(
+      validateServerEnv({ ...BASE_VALID_ENV, SWAGGER_ENABLED: ' TRUE ' })
+        .SWAGGER_ENABLED,
+    ).toBe(true);
+    expect(
+      validateServerEnv({ ...BASE_VALID_ENV, SWAGGER_ENABLED: '   ' })
+        .SWAGGER_ENABLED,
+    ).toBe(true);
+
+    expect(() =>
+      validateServerEnv({ ...BASE_VALID_ENV, SWAGGER_ENABLED: 'yes' }),
+    ).toThrow(EnvValidationError);
+  });
+
+  it('rejects MAIL_PROVIDER=console and short AUTH_ACCESS_TOKEN_SECRET in production', () => {
+    expect(() =>
+      validateServerEnv({
+        ...BASE_VALID_ENV,
+        NODE_ENV: 'production',
+        MAIL_PROVIDER: 'console',
+        AUTH_ACCESS_TOKEN_SECRET: 'short',
+      }),
+    ).toThrow(EnvValidationError);
+  });
+
+  it('requires MAIL_API_KEY when MAIL_PROVIDER is resend or http', () => {
+    expect(() =>
+      validateServerEnv({
+        ...BASE_VALID_ENV,
+        MAIL_PROVIDER: 'resend',
+      }),
+    ).toThrow(/MAIL_API_KEY/);
+  });
+
+  it('requires COOKIE_SECURE=true when COOKIE_SAME_SITE=none', () => {
+    expect(() =>
+      validateServerEnv({
+        ...BASE_VALID_ENV,
+        COOKIE_SAME_SITE: 'none',
+        COOKIE_SECURE: 'false',
+      }),
+    ).toThrow(/COOKIE_SECURE/);
   });
 });
 

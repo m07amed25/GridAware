@@ -28,6 +28,7 @@ describe('EnvModule', () => {
     expect(env.isProduction).toBe(false);
     expect(env.port).toBe(4000);
     expect(env.corsOrigin).toBe('http://localhost:3000');
+    expect(env.swaggerEnabled).toBe(true);
     expect(env.databaseUrl).toBe(
       'postgresql://user:pass@localhost:5432/gridaware',
     );

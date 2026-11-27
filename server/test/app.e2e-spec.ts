@@ -9,6 +9,7 @@ import { PrismaService } from './../src/database/prisma.service.js';
 import { AppLogger } from './../src/logging/app-logger.service.js';
 import { MqttService } from './../src/mqtt/mqtt.service.js';
 import { RedisService } from './../src/redis/redis.service.js';
+import { setupSwagger } from './../src/swagger/setup-swagger.js';
 
 describe('App HTTP foundation (e2e)', () => {
   let app: INestApplication<App>;
@@ -44,6 +45,7 @@ describe('App HTTP foundation (e2e)', () => {
     app = moduleFixture.createNestApplication({ bufferLogs: true });
     app.useLogger(app.get(AppLogger));
     app.setGlobalPrefix('api/v1');
+    setupSwagger(app);
     app.enableCors({
       origin: 'http://localhost:3000',
       credentials: true,
@@ -145,5 +147,37 @@ describe('App HTTP foundation (e2e)', () => {
       instance: '/api/v1/does-not-exist',
       requestId,
     });
+  });
+
+  it('/api/docs, /api/docs-json, and /api/docs-yaml (GET) expose Swagger UI and OpenAPI 3.1 spec alongside global middleware', async () => {
+    const uiResponse = await request(app.getHttpServer())
+      .get('/api/docs')
+      .expect(200);
+
+    expect(uiResponse.headers['content-type']).toContain('text/html');
+    expect(uiResponse.text).toContain('GridAware API Docs');
+    expect(uiResponse.text).toContain('swagger-ui');
+
+    const jsonResponse = await request(app.getHttpServer())
+      .get('/api/docs-json')
+      .expect(200);
+
+    expect(jsonResponse.headers['content-type']).toContain('application/json');
+    expect(jsonResponse.body).toMatchObject({
+      openapi: '3.1.0',
+      info: {
+        title: 'GridAware API',
+        version: '1.0.0',
+      },
+    });
+    expect(jsonResponse.body.paths['/api/v1/health/ready']).toBeDefined();
+    expect(jsonResponse.body.components?.schemas?.ProblemDetailsDto).toBeDefined();
+
+    const yamlResponse = await request(app.getHttpServer())
+      .get('/api/docs-yaml')
+      .expect(200);
+
+    expect(yamlResponse.headers['content-type']).toContain('text/yaml');
+    expect(yamlResponse.text).toContain('openapi: 3.1.0');
   });
 });
