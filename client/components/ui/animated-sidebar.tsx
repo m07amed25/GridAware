@@ -7,6 +7,7 @@ import React, {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { ChevronsLeft, X } from "lucide-react";
@@ -80,6 +81,16 @@ function SidebarTooltip({
   );
 }
 
+const emptySubscribe = () => () => {};
+
+function getShortcutLabel() {
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent) ? "⌘B" : "Ctrl+B";
+}
+
+function getServerShortcutLabel() {
+  return "Ctrl+B";
+}
+
 export function AnimatedSidebar({
   groups,
   activeId,
@@ -99,7 +110,11 @@ export function AnimatedSidebar({
 }: AnimatedSidebarProps) {
   const [uncontrolledExpanded, setUncontrolledExpanded] =
     useState(defaultExpanded);
-  const [shortcutLabel, setShortcutLabel] = useState("Ctrl+B");
+  const shortcutLabel = useSyncExternalStore(
+    emptySubscribe,
+    getShortcutLabel,
+    getServerShortcutLabel,
+  );
   const open = controlledExpanded ?? uncontrolledExpanded;
 
   const listRef = useRef<HTMLDivElement>(null);
@@ -113,15 +128,6 @@ export function AnimatedSidebar({
     }
     onExpandedChange?.(next);
   }, [controlledExpanded, onExpandedChange, open]);
-
-  useEffect(() => {
-    if (typeof navigator !== "undefined") {
-      const isMac = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (isMac) {
-        setShortcutLabel("⌘B");
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (hideCollapseButton) {
