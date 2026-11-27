@@ -1,0 +1,174 @@
+name: Auto-Update Open PRs
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: auto-update-prs
+  cancel-in-progress: true
+
+jobs:
+  update-prs:
+    name: Rebase / Update Open PRs
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Update outdated open PRs targeting main
+        env:
+          PR_UPDATE_TOKEN: ${{ secrets.PR_UPDATE_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          node <<'NODE'
+          const token = process.env.PR_UPDATE_TOKEN;
+          const repo = process.env.GITHUB_REPOSITORY;
+
+          if (!token) {
+            console.log(
+              '::warning::PR_UPDATE_TOKEN secret is not configured; skipping automatic PR updates. Add a Fine-Grained PAT with Contents (read/write), Pull requests (read/write), and Issues (read/write) permissions as repository secret PR_UPDATE_TOKEN.'
+            );
+            process.exit(0);
+          }
+
+          const headers = {
+            Accept: 'application/vnd.github+json',
+            Authorization: `Bearer ${token}`,
+            'X-GitHub-Api-Version': '2022-11-28',
+            'User-Agent': 'gridaware-auto-update-prs',
+          };
+
+          async function gh(path, options = {}) {
+            const res = await fetch(`https://api.github.com${path}`, {
+              ...options,
+              headers: {
+                ...headers,
+                ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+                ...options.headers,
+              },
+            });
+            const text = await res.text();
+            let data = null;
+            try {
+              data = text ? JSON.parse(text) : null;
+            } catch {
+              data = text;
+            }
+            return { ok: res.ok, status: res.status, data };
+          }
+
+          async function listOpenMainPrs() {
+            const prs = [];
+            for (let page = 1; page <= 10; page += 1) {
+              const res = await gh(
+                `/repos/${repo}/pulls?state=open&base=main&per_page=100&page=${page}`
+              );
+              if (!res.ok) {
+                throw new Error(
+                  `Failed to list open PRs (HTTP ${res.status}): ${JSON.stringify(res.data)}`
+                );
+              }
+              prs.push(...res.data);
+              if (res.data.length < 100) break;
+            }
+            return prs;
+          }
+
+          async function main() {
+            const prs = await listOpenMainPrs();
+            console.log(`Found ${prs.length} open PR(s) targeting main.`);
+
+            for (const pr of prs) {
+              if (pr.draft) {
+                console.log(`PR #${pr.number}: skipping draft PR.`);
+                continue;
+              }
+
+              const cmp = await gh(
+                `/repos/${repo}/compare/${pr.head.sha}...main`
+              );
+              if (!cmp.ok) {
+                console.log(
+                  `::warning::PR #${pr.number}: failed to compare with main (HTTP ${cmp.status}), skipping.`
+                );
+                continue;
+              }
+
+              if (cmp.data.ahead_by === 0) {
+                console.log(`PR #${pr.number}: already up to date with main.`);
+                continue;
+              }
+
+              if (pr.user?.login === 'dependabot[bot]') {
+                const commentsRes = await gh(
+                  `/repos/${repo}/issues/${pr.number}/comments?per_page=100`
+                );
+                const lastComment =
+                  commentsRes.ok && Array.isArray(commentsRes.data)
+                    ? commentsRes.data[commentsRes.data.length - 1]
+                    : null;
+
+                if (lastComment?.body?.trim() === '@dependabot rebase') {
+                  console.log(
+                    `PR #${pr.number}: @dependabot rebase already requested, skipping.`
+                  );
+                  continue;
+                }
+
+                const commentRes = await gh(
+                  `/repos/${repo}/issues/${pr.number}/comments`,
+                  {
+                    method: 'POST',
+                    body: JSON.stringify({ body: '@dependabot rebase' }),
+                  }
+                );
+
+                if (commentRes.ok) {
+                  console.log(
+                    `PR #${pr.number}: requested @dependabot rebase (${cmp.data.ahead_by} commit(s) behind main).`
+                  );
+                } else {
+                  console.log(
+                    `::warning::PR #${pr.number}: failed to comment @dependabot rebase (HTTP ${commentRes.status}): ${JSON.stringify(commentRes.data)}`
+                  );
+                }
+                continue;
+              }
+
+              if (pr.head?.repo?.full_name !== repo && !pr.maintainer_can_modify) {
+                console.log(
+                  `PR #${pr.number}: fork PR without maintainer edits enabled, skipping.`
+                );
+                continue;
+              }
+
+              const updateRes = await gh(
+                `/repos/${repo}/pulls/${pr.number}/update-branch`,
+                {
+                  method: 'PUT',
+                  body: JSON.stringify({ expected_head_sha: pr.head.sha }),
+                }
+              );
+
+              if (updateRes.ok) {
+                console.log(
+                  `PR #${pr.number}: updated branch with main (${cmp.data.ahead_by} commit(s) behind).`
+                );
+              } else {
+                console.log(
+                  `::warning::PR #${pr.number}: could not update branch automatically (HTTP ${updateRes.status}): ${JSON.stringify(updateRes.data)}`
+                );
+              }
+            }
+          }
+
+          main().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          NODE
