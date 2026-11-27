@@ -58,6 +58,11 @@ describe('validateServerEnv', () => {
       MAIL_FROM: 'no-reply@gridaware.local',
       MAIL_API_KEY: undefined,
       MAIL_API_URL: undefined,
+      MAIL_SMTP_HOST: undefined,
+      MAIL_SMTP_PORT: 465,
+      MAIL_SMTP_SECURE: undefined,
+      MAIL_SMTP_USER: undefined,
+      MAIL_SMTP_PASS: undefined,
       APP_URL: 'http://localhost:3000',
     });
   });
@@ -277,6 +282,30 @@ describe('validateServerEnv', () => {
         MAIL_PROVIDER: 'resend',
       }),
     ).toThrow(/MAIL_API_KEY/);
+  });
+
+  it('requires MAIL_SMTP_HOST, MAIL_SMTP_USER, and MAIL_SMTP_PASS when MAIL_PROVIDER is smtp', () => {
+    expect(() =>
+      validateServerEnv({
+        ...BASE_VALID_ENV,
+        MAIL_PROVIDER: 'smtp',
+      }),
+    ).toThrow(/MAIL_SMTP_HOST/);
+
+    const parsed = validateServerEnv({
+      ...BASE_VALID_ENV,
+      NODE_ENV: 'production',
+      AUTH_ACCESS_TOKEN_SECRET: 'a-very-strong-production-secret-32-chars',
+      MAIL_PROVIDER: 'smtp',
+      MAIL_SMTP_HOST: 'smtp.gmail.com',
+      MAIL_SMTP_PORT: '465',
+      MAIL_SMTP_SECURE: 'true',
+      MAIL_SMTP_USER: 'sender@gmail.com',
+      MAIL_SMTP_PASS: 'app-password-value',
+    });
+    expect(parsed.MAIL_PROVIDER).toBe('smtp');
+    expect(parsed.MAIL_SMTP_PORT).toBe(465);
+    expect(parsed.MAIL_SMTP_SECURE).toBe(true);
   });
 
   it('requires COOKIE_SECURE=true when COOKIE_SAME_SITE=none', () => {

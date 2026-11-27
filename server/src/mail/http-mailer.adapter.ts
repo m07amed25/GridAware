@@ -5,6 +5,10 @@ import type {
   PasswordResetEmailPayload,
   VerificationEmailPayload,
 } from './mailer.port.js';
+import {
+  renderPasswordResetEmail,
+  renderVerificationEmail,
+} from './templates/render-templates.js';
 
 @Injectable()
 export class HttpMailerAdapter implements MailerPort {
@@ -15,22 +19,20 @@ export class HttpMailerAdapter implements MailerPort {
   async sendVerificationEmail(
     payload: VerificationEmailPayload,
   ): Promise<void> {
+    const rendered = await renderVerificationEmail(payload);
     await this.sendEmail({
       to: payload.to,
-      subject: 'Verify your GridAware account email',
-      html: `<p>Hello ${escapeHtml(payload.displayName)},</p><p>Verify your GridAware email address within ${payload.expiresInHours} hours:</p><p><a href="${escapeHtml(payload.verificationUrl)}">Verify email</a></p>`,
-      text: `Hello ${payload.displayName}, verify your GridAware email within ${payload.expiresInHours} hours: ${payload.verificationUrl}`,
+      ...rendered,
     });
   }
 
   async sendPasswordResetEmail(
     payload: PasswordResetEmailPayload,
   ): Promise<void> {
+    const rendered = await renderPasswordResetEmail(payload);
     await this.sendEmail({
       to: payload.to,
-      subject: 'Reset your GridAware passphrase',
-      html: `<p>Hello ${escapeHtml(payload.displayName)},</p><p>Reset your GridAware passphrase within ${payload.expiresInMinutes} minutes:</p><p><a href="${escapeHtml(payload.resetUrl)}">Reset passphrase</a></p>`,
-      text: `Hello ${payload.displayName}, reset your GridAware passphrase within ${payload.expiresInMinutes} minutes: ${payload.resetUrl}`,
+      ...rendered,
     });
   }
 
@@ -69,13 +71,4 @@ export class HttpMailerAdapter implements MailerPort {
       throw new Error(`Mail provider failed with status ${response.status}`);
     }
   }
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
 }

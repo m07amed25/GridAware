@@ -351,7 +351,7 @@ export const serverEnvSchema = z
           ? normalized.toLowerCase()
           : (normalized ?? 'console');
       },
-      z.enum(['console', 'resend', 'http']),
+      z.enum(['console', 'resend', 'http', 'smtp']),
     ),
     MAIL_FROM: z.preprocess(
       (v) => emptyToUndefined(v) ?? 'no-reply@gridaware.local',
@@ -359,6 +359,11 @@ export const serverEnvSchema = z
     ),
     MAIL_API_KEY: optionalNonEmptyString,
     MAIL_API_URL: optionalUrl(httpUrlSchema),
+    MAIL_SMTP_HOST: optionalNonEmptyString,
+    MAIL_SMTP_PORT: intRangeSchema(465, 1, 65535),
+    MAIL_SMTP_SECURE: booleanSchema(undefined),
+    MAIL_SMTP_USER: optionalNonEmptyString,
+    MAIL_SMTP_PASS: optionalNonEmptyString,
     APP_URL: z.preprocess(
       (v) => emptyToUndefined(v) ?? 'http://localhost:3000',
       httpUrlSchema,
@@ -429,12 +434,39 @@ export const serverEnvSchema = z
       });
     }
 
-    if (env.MAIL_PROVIDER !== 'console' && !env.MAIL_API_KEY) {
+    if (
+      (env.MAIL_PROVIDER === 'resend' || env.MAIL_PROVIDER === 'http') &&
+      !env.MAIL_API_KEY
+    ) {
       ctx.addIssue({
         code: 'custom',
         path: ['MAIL_API_KEY'],
-        message: 'Required when MAIL_PROVIDER is not "console"',
+        message: 'Required when MAIL_PROVIDER is "resend" or "http"',
       });
+    }
+
+    if (env.MAIL_PROVIDER === 'smtp') {
+      if (!env.MAIL_SMTP_HOST) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['MAIL_SMTP_HOST'],
+          message: 'Required when MAIL_PROVIDER is "smtp"',
+        });
+      }
+      if (!env.MAIL_SMTP_USER) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['MAIL_SMTP_USER'],
+          message: 'Required when MAIL_PROVIDER is "smtp"',
+        });
+      }
+      if (!env.MAIL_SMTP_PASS) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['MAIL_SMTP_PASS'],
+          message: 'Required when MAIL_PROVIDER is "smtp"',
+        });
+      }
     }
   });
 

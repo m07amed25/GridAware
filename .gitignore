@@ -30,3 +30,6 @@ Thumbs.db
 server/src/generated/prisma/
 
 .agents
+.codex
+.github/skills/
+.specify/

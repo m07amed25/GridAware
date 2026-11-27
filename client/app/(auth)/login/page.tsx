@@ -129,32 +129,24 @@ function LoginFormContent() {
           placeholder="alex@facility.example"
         />
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label
-              htmlFor="login-password"
-              className="block text-sm font-medium text-[var(--text-primary)]"
-            >
-              Passphrase
-            </label>
+        <AuthField
+          id="login-password"
+          name="password"
+          type="password"
+          label="Passphrase"
+          labelAction={
             <Link
               href="/forgot-password"
               className="text-xs font-medium text-[var(--text-secondary)] underline underline-offset-4 hover:text-[var(--color-yellow)]"
             >
               Forgot passphrase?
             </Link>
-          </div>
-          <input
-            id="login-password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full min-h-[44px] rounded-[var(--radius-control)] border border-[var(--border-default)] bg-[var(--surface-2)] px-3.5 py-2.5 text-sm text-[var(--text-strong)] placeholder:text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-lime)]"
-          />
-        </div>
+          }
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
         <AuthButton
           type="submit"

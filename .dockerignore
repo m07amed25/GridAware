@@ -15,6 +15,7 @@ build
 
 # Version control & editor/agent metadata
 .git
+.github
 .gitignore
 .agents
 .superpowers

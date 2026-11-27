@@ -189,7 +189,7 @@ export class EnvService {
     return this.env.AUTH_RATE_LIMIT_REFRESH_WINDOW_SEC;
   }
 
-  get mailProvider(): 'console' | 'resend' | 'http' {
+  get mailProvider(): 'console' | 'resend' | 'http' | 'smtp' {
     return this.env.MAIL_PROVIDER;
   }
 
@@ -203,6 +203,26 @@ export class EnvService {
 
   get mailApiUrl(): string | undefined {
     return this.env.MAIL_API_URL;
+  }
+
+  get mailSmtpHost(): string | undefined {
+    return this.env.MAIL_SMTP_HOST;
+  }
+
+  get mailSmtpPort(): number {
+    return this.env.MAIL_SMTP_PORT;
+  }
+
+  get mailSmtpSecure(): boolean {
+    return this.env.MAIL_SMTP_SECURE ?? this.env.MAIL_SMTP_PORT === 465;
+  }
+
+  get mailSmtpUser(): string | undefined {
+    return this.env.MAIL_SMTP_USER;
+  }
+
+  get mailSmtpPass(): string | undefined {
+    return this.env.MAIL_SMTP_PASS;
   }
 
   get appUrl(): string {

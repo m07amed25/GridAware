@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 export type BannerTone = "error" | "warning" | "success" | "info";
 
@@ -107,18 +107,90 @@ export interface AuthFieldProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
   id: string;
   label: string;
+  labelAction?: React.ReactNode;
   hint?: string;
   error?: string;
+}
+
+function EyeIcon({ open }: { open: boolean }) {
+  if (open) {
+    return (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M2.5 12C4.6 7.8 8 5.5 12 5.5C16 5.5 19.4 7.8 21.5 12C19.4 16.2 16 18.5 12 18.5C8 18.5 4.6 16.2 2.5 12Z"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinejoin="round"
+        />
+        <circle
+          cx="12"
+          cy="12"
+          r="3"
+          stroke="currentColor"
+          strokeWidth="1.75"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M3 3L21 21"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10.6 5.7C11.1 5.6 11.5 5.5 12 5.5C16 5.5 19.4 7.8 21.5 12C20.7 13.6 19.6 15 18.3 16.1"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14.1 14.1C13.5 14.7 12.8 15 12 15C10.3 15 9 13.7 9 12C9 11.2 9.3 10.5 9.9 9.9"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <path
+        d="M6.4 7.7C4.8 8.8 3.5 10.2 2.5 12C4.6 16.2 8 18.5 12 18.5C13.4 18.5 14.7 18.2 15.9 17.7"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 export function AuthField({
   id,
   label,
+  labelAction,
   hint,
   error,
+  type,
   className = "",
   ...rest
 }: AuthFieldProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const effectiveType = isPassword ? (showPassword ? "text" : "password") : type;
+
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy =
@@ -126,23 +198,51 @@ export function AuthField({
 
   return (
     <div className="space-y-1.5">
-      <label
-        htmlFor={id}
-        className="block text-sm font-medium text-[var(--text-primary)]"
-      >
-        {label}
-      </label>
-      <input
-        id={id}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        className={`w-full min-h-[44px] rounded-[var(--radius-control)] border bg-[var(--surface-2)] px-3.5 py-2.5 text-sm text-[var(--text-strong)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-lime)] ${
-          error
-            ? "border-[var(--status-critical)]"
-            : "border-[var(--border-default)] hover:border-[var(--border-strong)]"
-        } ${className}`}
-        {...rest}
-      />
+      {labelAction ? (
+        <div className="flex items-center justify-between gap-2">
+          <label
+            htmlFor={id}
+            className="block text-sm font-medium text-[var(--text-primary)]"
+          >
+            {label}
+          </label>
+          {labelAction}
+        </div>
+      ) : (
+        <label
+          htmlFor={id}
+          className="block text-sm font-medium text-[var(--text-primary)]"
+        >
+          {label}
+        </label>
+      )}
+      <div className="relative">
+        <input
+          id={id}
+          type={effectiveType}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          className={`w-full min-h-[44px] rounded-[var(--radius-control)] border bg-[var(--surface-2)] py-2.5 pl-3.5 text-sm text-[var(--text-strong)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-lime)] ${
+            isPassword ? "pr-12" : "pr-3.5"
+          } ${
+            error
+              ? "border-[var(--status-critical)]"
+              : "border-[var(--border-default)] hover:border-[var(--border-strong)]"
+          } ${className}`}
+          {...rest}
+        />
+        {isPassword ? (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 right-0 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-r-[var(--radius-control)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-strong)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-lime)]"
+          >
+            <EyeIcon open={showPassword} />
+          </button>
+        ) : null}
+      </div>
       {hint ? (
         <p id={hintId} className="text-xs leading-4 text-[var(--text-muted)]">
           {hint}
