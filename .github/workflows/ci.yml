@@ -131,7 +131,7 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.dev.yml config -q
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build client production image
         uses: docker/build-push-action@v7
