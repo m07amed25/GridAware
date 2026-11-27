@@ -44,7 +44,7 @@ export function broadcastOrganizationChanged(organizationId: string) {
   channel.close();
 }
 
-export function AccessContextProvider({
+function AccessContextProviderImpl({
   organizationId,
   children,
 }: {
@@ -179,6 +179,28 @@ export function AccessContextProvider({
   return (
     <AccessContext.Provider value={value}>{children}</AccessContext.Provider>
   );
+}
+
+export function AccessContextProvider({
+  organizationId,
+  children,
+}: {
+  organizationId: string;
+  children: React.ReactNode;
+}) {
+  const parentContext = useContext(AccessContext);
+  if (parentContext && parentContext.organizationId === organizationId) {
+    return <>{children}</>;
+  }
+  return (
+    <AccessContextProviderImpl organizationId={organizationId}>
+      {children}
+    </AccessContextProviderImpl>
+  );
+}
+
+export function useOptionalAccessContext(): AccessContextState | null {
+  return useContext(AccessContext);
 }
 
 export function useAccessContext(): AccessContextState {
