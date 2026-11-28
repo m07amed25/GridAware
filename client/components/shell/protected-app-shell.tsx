@@ -35,6 +35,7 @@ import {
   AnimatedSidebar,
   type AnimatedSidebarGroup,
 } from "@/components/ui/animated-sidebar";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -272,26 +273,48 @@ function ProtectedShellInner({
 
   const expandedBrand = useMemo(
     () => (
-      <Image
-        src="/brand/gridaware-horizontal-dark.svg"
-        alt="GridAware"
-        width={161}
-        height={40}
-        priority
-      />
+      <>
+        <Image
+          src="/brand/gridaware-horizontal-ink.svg"
+          alt="GridAware"
+          width={161}
+          height={40}
+          priority
+          className="dark:hidden"
+        />
+        <Image
+          src="/brand/gridaware-horizontal-dark.svg"
+          alt="GridAware"
+          width={161}
+          height={40}
+          priority
+          className="hidden dark:block"
+        />
+      </>
     ),
     [],
   );
 
   const collapsedBrand = useMemo(
     () => (
-      <Image
-        src="/brand/gridaware-symbol-small-dark.svg"
-        alt=""
-        width={28}
-        height={28}
-        priority
-      />
+      <>
+        <Image
+          src="/brand/gridaware-symbol-small-ink.svg"
+          alt=""
+          width={28}
+          height={28}
+          priority
+          className="dark:hidden"
+        />
+        <Image
+          src="/brand/gridaware-symbol-small-dark.svg"
+          alt=""
+          width={28}
+          height={28}
+          priority
+          className="hidden dark:block"
+        />
+      </>
     ),
     [],
   );
@@ -413,28 +436,30 @@ function ProtectedShellInner({
               ) : null}
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={`Account menu for ${user.displayName}`}
-                  className="inline-flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-2)] px-2.5 py-1.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-default)] hover:bg-[var(--surface-3)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                >
-                  <Avatar className="h-7 w-7 border-[var(--border-default)]">
-                    <AvatarFallback className="text-[11px] font-semibold text-[var(--color-yellow)]">
-                      {userInitials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden max-w-[160px] truncate text-[13px] text-[var(--text-strong)] sm:inline">
-                    {user.displayName}
-                  </span>
-                  <ChevronDown
-                    className="h-3.5 w-3.5 text-[var(--text-muted)]"
-                    aria-hidden="true"
-                  />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
+            <div className="flex shrink-0 items-center gap-2">
+              <AnimatedThemeToggler />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Account menu for ${user.displayName}`}
+                    className="inline-flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-2)] px-2.5 py-1.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-default)] hover:bg-[var(--surface-3)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                  >
+                    <Avatar className="h-7 w-7 border-[var(--border-default)]">
+                      <AvatarFallback className="text-[11px] font-semibold text-[var(--accent-ink)]">
+                        {userInitials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden max-w-[160px] truncate text-[13px] text-[var(--text-strong)] sm:inline">
+                      {user.displayName}
+                    </span>
+                    <ChevronDown
+                      className="h-3.5 w-3.5 text-[var(--text-muted)]"
+                      aria-hidden="true"
+                    />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuLabel className="font-normal">
                   <div className="space-y-0.5">
                     <p className="truncate text-sm font-semibold text-[var(--text-strong)]">
@@ -472,6 +497,7 @@ function ProtectedShellInner({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </header>
 
           <main

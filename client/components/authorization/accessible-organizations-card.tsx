@@ -49,7 +49,7 @@ export function AccessibleOrganizationsCard() {
         <div>
           <CardTitle className="flex items-center gap-2">
             <Building2
-              className="h-4 w-4 text-[var(--color-yellow)]"
+              className="h-4 w-4 text-[var(--accent-ink)]"
               aria-hidden="true"
             />
             <span>Your Organizations</span>

@@ -71,7 +71,7 @@ export default function OrganizationOverviewPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldCheck
-                className="h-4 w-4 text-[var(--color-yellow)]"
+                className="h-4 w-4 text-[var(--accent-ink)]"
                 aria-hidden="true"
               />
               <span>Effective capabilities ({accessContext.permissions.length})</span>
@@ -108,7 +108,7 @@ export default function OrganizationOverviewPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users
-                  className="h-4 w-4 text-[var(--color-yellow)]"
+                  className="h-4 w-4 text-[var(--accent-ink)]"
                   aria-hidden="true"
                 />
                 <span>Members &amp; Role Administration</span>

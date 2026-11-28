@@ -19,7 +19,7 @@ export function AuthSplitShell({
       {/* Minimal Architectural Brand Panel (pattern strictly isolated from form column) */}
       <aside
         aria-label="GridAware"
-        className="relative hidden overflow-hidden border-e border-[var(--border-subtle)] bg-[var(--surface-canvas)] lg:flex lg:flex-col lg:justify-between lg:p-12 xl:p-14"
+        className="dark relative hidden overflow-hidden border-e border-[var(--border-subtle)] bg-[var(--surface-canvas)] lg:flex lg:flex-col lg:justify-between lg:p-12 xl:p-14"
       >
         {/* Approved 3x3 modular GridAware pattern backdrop */}
         <div
@@ -81,12 +81,20 @@ export function AuthSplitShell({
             aria-label="GridAware home"
           >
             <Image
+              src="/brand/gridaware-horizontal-ink.svg"
+              alt="GridAware"
+              width={120}
+              height={30}
+              priority
+              className="h-7 w-auto dark:hidden"
+            />
+            <Image
               src="/brand/gridaware-horizontal-dark.svg"
               alt="GridAware"
               width={120}
               height={30}
               priority
-              className="h-7 w-auto"
+              className="hidden h-7 w-auto dark:block"
             />
           </Link>
         </header>

@@ -141,7 +141,7 @@ const SelectItem = React.forwardRef<
     <span className="absolute end-2.5 flex h-4 w-4 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
         <Check
-          className="h-4 w-4 text-[var(--color-yellow)]"
+          className="h-4 w-4 text-[var(--accent-ink)]"
           aria-hidden="true"
         />
       </SelectPrimitive.ItemIndicator>
