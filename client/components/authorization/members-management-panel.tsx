@@ -35,6 +35,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiClientError } from "@/lib/auth/client";
 import {
@@ -490,24 +497,27 @@ export function MembersManagementPanel() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="invite-role">Role</Label>
-                <select
-                  id="invite-role"
+                <Select
                   value={inviteRole}
-                  onChange={(e) =>
-                    setInviteRole(e.target.value as AssignableNonOwnerRole)
+                  onValueChange={(value) =>
+                    setInviteRole(value as AssignableNonOwnerRole)
                   }
                   disabled={inviting}
-                  className="flex h-11 w-full rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
-                  {ASSIGNABLE_NON_OWNER_ROLES.map((r) => {
-                    const assignable = r as AssignableNonOwnerRole;
-                    return (
-                      <option key={assignable} value={assignable}>
-                        {ROLE_LABELS[assignable]}
-                      </option>
-                    );
-                  })}
-                </select>
+                  <SelectTrigger id="invite-role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASSIGNABLE_NON_OWNER_ROLES.map((r) => {
+                      const assignable = r as AssignableNonOwnerRole;
+                      return (
+                        <SelectItem key={assignable} value={assignable}>
+                          {ROLE_LABELS[assignable]}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
               <Button type="submit" disabled={inviting}>
                 <MailPlus className="h-4 w-4" aria-hidden="true" />
@@ -591,38 +601,48 @@ export function MembersManagementPanel() {
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs text-[var(--text-secondary)]">
-              <span className="sr-only">Filter by role</span>
-              <select
+            <Select
+              value={roleFilter || "ALL"}
+              onValueChange={(value) =>
+                setRoleFilter(value === "ALL" ? "" : value)
+              }
+            >
+              <SelectTrigger
                 aria-label="Filter by role"
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="min-h-[38px] rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-2)] px-2.5 text-xs text-[var(--text-strong)]"
+                className="min-h-[38px] w-auto py-1.5 text-xs"
               >
-                <option value="">All roles</option>
+                <SelectValue placeholder="All roles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All roles</SelectItem>
                 {ALL_ROLE_FILTERS.map((r) => (
-                  <option key={r} value={r}>
+                  <SelectItem key={r} value={r}>
                     {ROLE_LABELS[r]}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </label>
-            <label className="text-xs text-[var(--text-secondary)]">
-              <span className="sr-only">Filter by status</span>
-              <select
+              </SelectContent>
+            </Select>
+            <Select
+              value={statusFilter || "ALL"}
+              onValueChange={(value) =>
+                setStatusFilter(value === "ALL" ? "" : value)
+              }
+            >
+              <SelectTrigger
                 aria-label="Filter by status"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="min-h-[38px] rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-2)] px-2.5 text-xs text-[var(--text-strong)]"
+                className="min-h-[38px] w-auto py-1.5 text-xs"
               >
-                <option value="">All statuses</option>
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All statuses</SelectItem>
                 {ALL_STATUS_FILTERS.map((s) => (
-                  <option key={s} value={s}>
+                  <SelectItem key={s} value={s}>
                     {s}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </label>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -672,35 +692,42 @@ export function MembersManagementPanel() {
 
                     <div className="flex flex-wrap items-center gap-2">
                       {can("members:update-role") && !isRemoved ? (
-                        <label className="inline-flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                          <span className="sr-only">
-                            Role for {member.displayName}
-                          </span>
-                          <select
+                        <Select
+                          value={isOwner ? "OWNER" : member.role}
+                          onValueChange={(value) => {
+                            void handleRoleChange(
+                              member,
+                              value as AssignableNonOwnerRole,
+                            );
+                          }}
+                          disabled={isSelf || isOwner || isBusy}
+                        >
+                          <SelectTrigger
                             aria-label={`Role for ${member.displayName}`}
-                            disabled={isSelf || isOwner || isBusy}
-                            value={isOwner ? "" : member.role}
-                            onChange={(event) => {
-                              const nextRole = event.target
-                                .value as AssignableNonOwnerRole;
-                              void handleRoleChange(member, nextRole);
-                            }}
-                            className="min-h-[40px] rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-2)] px-2.5 text-sm text-[var(--text-strong)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                            className="min-h-[40px] w-auto py-1.5 text-sm"
                           >
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
                             {isOwner ? (
-                              <option value="">Owner (transfer only)</option>
+                              <SelectItem value="OWNER" disabled>
+                                Owner (transfer only)
+                              </SelectItem>
                             ) : null}
                             {ASSIGNABLE_NON_OWNER_ROLES.map((roleOpt) => {
                               const assignable =
                                 roleOpt as AssignableNonOwnerRole;
                               return (
-                                <option key={assignable} value={assignable}>
+                                <SelectItem
+                                  key={assignable}
+                                  value={assignable}
+                                >
                                   {ROLE_LABELS[assignable]}
-                                </option>
+                                </SelectItem>
                               );
                             })}
-                          </select>
-                        </label>
+                          </SelectContent>
+                        </Select>
                       ) : null}
 
                       {can("members:suspend") && member.status === "ACTIVE" ? (
@@ -851,29 +878,34 @@ export function MembersManagementPanel() {
           </AlertDialogHeader>
 
           <div className="space-y-4 py-2">
-            <label className="block space-y-1.5 text-sm">
-              <span className="font-medium text-[var(--text-primary)]">
+            <div className="space-y-1.5 text-sm">
+              <Label htmlFor="transfer-owner-role">
                 Your new role after transfer
-              </span>
-              <select
+              </Label>
+              <Select
                 value={previousOwnerNextRole}
-                onChange={(e) =>
-                  setPreviousOwnerNextRole(
-                    e.target.value as AssignableNonOwnerRole,
-                  )
+                onValueChange={(value) =>
+                  setPreviousOwnerNextRole(value as AssignableNonOwnerRole)
                 }
-                className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text-strong)]"
               >
-                {ASSIGNABLE_NON_OWNER_ROLES.map((r) => {
-                  const assignable = r as AssignableNonOwnerRole;
-                  return (
-                    <option key={assignable} value={assignable}>
-                      {ROLE_LABELS[assignable]}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
+                <SelectTrigger
+                  id="transfer-owner-role"
+                  className="min-h-[40px] w-full py-2 text-sm"
+                >
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSIGNABLE_NON_OWNER_ROLES.map((r) => {
+                    const assignable = r as AssignableNonOwnerRole;
+                    return (
+                      <SelectItem key={assignable} value={assignable}>
+                        {ROLE_LABELS[assignable]}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
 
             <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[var(--text-primary)]">
               <input

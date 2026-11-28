@@ -10,8 +10,8 @@ import {
 } from '../permission-map.js';
 
 describe('Permission Catalogue & Role-to-Permission Map', () => {
-  it('defines 61 unique, action-oriented <resource>:<action> permissions', () => {
-    expect(ALL_PERMISSIONS.length).toBe(61);
+  it('defines 70 unique, action-oriented <resource>:<action> permissions', () => {
+    expect(ALL_PERMISSIONS.length).toBe(70);
     expect(new Set(ALL_PERMISSIONS).size).toBe(ALL_PERMISSIONS.length);
     for (const permission of ALL_PERMISSIONS) {
       expect(permission).toMatch(/^[a-z-]+:[a-z-]+$/);

@@ -166,6 +166,7 @@ jobs:
           AUTH_ACCESS_TOKEN_SECRET=ci-smoke-test-access-token-secret-32chars
           MAIL_PROVIDER=resend
           MAIL_API_KEY=ci_dummy_mail_api_key
+          MQTT_ALLOW_ANONYMOUS=true
           EOF
 
           docker compose up -d --no-build --wait --wait-timeout 90
@@ -176,8 +177,15 @@ jobs:
           cat >> server/.env <<'EOF'
           MQTT_USERNAME=ci_device
           MQTT_PASSWORD=ci_secret_password
+          MQTT_ALLOW_ANONYMOUS=false
           EOF
-          docker compose up -d --no-build --force-recreate mosquitto --wait --wait-timeout 45
+          docker compose up -d --no-build --force-recreate mosquitto server --wait --wait-timeout 45
+          timeout 30s bash -c 'until docker compose logs --no-color server | grep -q "Connected to MQTT broker"; do sleep 1; done'
+          timeout 5s docker compose exec -T mosquitto sh -c 'mosquitto_sub -h localhost -u "$MQTT_USERNAME" -P "$MQTT_PASSWORD" -t '\''$SYS/broker/uptime'\'' -C 1 -W 3'
+          if timeout 5s docker compose exec -T mosquitto mosquitto_sub -h localhost -t '$SYS/broker/uptime' -C 1 -W 1 >/dev/null 2>&1; then
+            echo "Mosquitto accepted an anonymous connection with credentials configured" >&2
+            exit 1
+          fi
 
       - name: Dump Compose logs on failure
         if: failure()

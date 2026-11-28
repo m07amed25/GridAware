@@ -4,17 +4,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, {
+  memo,
+  Suspense,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
 import {
+  Activity,
   Building2,
   ChevronDown,
   Compass,
+  Cpu,
   Eye,
   LayoutDashboard,
   LogOut,
@@ -34,6 +39,7 @@ import { RoleBadge } from "@/components/authorization/role-badge";
 import {
   AnimatedSidebar,
   type AnimatedSidebarGroup,
+  type AnimatedSidebarItem,
 } from "@/components/ui/animated-sidebar";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -48,10 +54,13 @@ import {
 import { apiRequest, broadcastSessionInvalidated } from "@/lib/auth/client";
 import type { SafeUserProfile } from "@/lib/auth/types";
 import { listAccessibleOrganizations } from "@/lib/authorization/api";
-import type { ShellNavIconKey } from "@/lib/navigation/shell-nav";
+import type {
+  ShellNavIconKey,
+  ShellPathStore,
+} from "@/lib/navigation/shell-nav";
 import {
   buildShellNavGroups,
-  extractActiveOrgId,
+  createShellPathStore,
   getUserInitials,
   resolveActiveSidebarId,
 } from "@/lib/navigation/shell-nav.mjs";
@@ -99,6 +108,8 @@ const NAV_ICON_BY_KEY: Record<ShellNavIconKey, React.ReactNode> = {
   onboarding: <Compass aria-hidden="true" />,
   "org-overview": <Building2 aria-hidden="true" />,
   "org-sites": <MapPin aria-hidden="true" />,
+  "org-devices": <Cpu aria-hidden="true" />,
+  "org-sensors": <Activity aria-hidden="true" />,
   "org-members": <Users aria-hidden="true" />,
   "org-roles": <Shield aria-hidden="true" />,
   "org-settings": <Settings aria-hidden="true" />,
@@ -111,6 +122,16 @@ function resolveNavIcon(iconKey: string): React.ReactNode {
   return <LayoutDashboard aria-hidden="true" />;
 }
 
+function ProtectedPathnameBridge({ store }: { store: ShellPathStore }) {
+  const pathname = usePathname();
+
+  useLayoutEffect(() => {
+    store.setPathname(pathname);
+  }, [pathname, store]);
+
+  return null;
+}
+
 interface OrgNameSnapshot {
   orgRef: string;
   orgId: string | null;
@@ -118,38 +139,34 @@ interface OrgNameSnapshot {
   name: string | null;
 }
 
-function ProtectedShellInner({
+function ProtectedSidebar({
   user,
   pathname,
   activeOrgId,
-  desktopExpanded,
-  onDesktopExpandedChange,
-  children,
+  mobile = false,
+  onClose,
+  onItemClick,
 }: {
   user: SafeUserProfile;
   pathname: string;
   activeOrgId: string | null;
-  desktopExpanded: boolean;
-  onDesktopExpandedChange: (expanded: boolean) => void;
-  children: React.ReactNode;
+  mobile?: boolean;
+  onClose?: () => void;
+  onItemClick?: (item: AnimatedSidebarItem) => void;
 }) {
-  const router = useRouter();
   const orgAccess = useOptionalAccessContext();
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-
-  const [signingOut, setSigningOut] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [prevPathname, setPrevPathname] = useState(pathname);
-  if (prevPathname !== pathname) {
-    setPrevPathname(pathname);
-    if (mobileOpen) {
-      setMobileOpen(false);
-    }
-  }
-
+  const desktopExpanded = useSyncExternalStore(
+    subscribeSidebarExpanded,
+    getSidebarExpandedSnapshot,
+    getSidebarExpandedServerSnapshot,
+  );
   const [orgNameSnapshot, setOrgNameSnapshot] =
     useState<OrgNameSnapshot | null>(null);
   const orgNameSnapshotRef = useRef<OrgNameSnapshot | null>(null);
+
+  const handleDesktopExpandedChange = useCallback((expanded: boolean) => {
+    writeSidebarExpanded(expanded);
+  }, []);
 
   useEffect(() => {
     if (!activeOrgId) {
@@ -211,33 +228,6 @@ function ProtectedShellInner({
       orgNameSnapshot.orgSlug?.toLowerCase() === normalizedActiveOrgId)
       ? orgNameSnapshot.name
       : null;
-
-  const closeMobileDrawer = useCallback((restoreFocus = false) => {
-    setMobileOpen(false);
-    if (restoreFocus) {
-      requestAnimationFrame(() => {
-        menuButtonRef.current?.focus();
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!mobileOpen) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.defaultPrevented) {
-        event.preventDefault();
-        closeMobileDrawer(true);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [mobileOpen, closeMobileDrawer]);
 
   const groups = useMemo<AnimatedSidebarGroup[]>(() => {
     const permissions =
@@ -330,9 +320,43 @@ function ProtectedShellInner({
     [user.displayName, user.email, userInitials],
   );
 
-  const handleMobileItemClick = useCallback(() => {
-    setMobileOpen(false);
-  }, []);
+  return (
+    <AnimatedSidebar
+      groups={groups}
+      activeId={activeId}
+      expanded={mobile ? true : desktopExpanded}
+      onExpandedChange={handleDesktopExpandedChange}
+      onItemClick={onItemClick}
+      brand={expandedBrand}
+      collapsedBrand={collapsedBrand}
+      brandHref="/app"
+      brandLabel="GridAware Dashboard"
+      account={sidebarAccount}
+      hideCollapseButton={mobile}
+      onClose={onClose}
+      ariaLabel="GridAware navigation"
+    />
+  );
+}
+
+const ProtectedShellHeader = memo(function ProtectedShellHeader({
+  user,
+  mobileOpen,
+  menuButtonRef,
+  onOpenNavigation,
+}: {
+  user: SafeUserProfile;
+  mobileOpen: boolean;
+  menuButtonRef: React.RefObject<HTMLButtonElement | null>;
+  onOpenNavigation: () => void;
+}) {
+  const router = useRouter();
+  const orgAccess = useOptionalAccessContext();
+  const [signingOut, setSigningOut] = useState(false);
+  const userInitials = useMemo(
+    () => getUserInitials(user.displayName),
+    [user.displayName],
+  );
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -349,6 +373,170 @@ function ProtectedShellInner({
   }
 
   return (
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-1)]/95 px-4 backdrop-blur-md sm:px-6">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <button
+          type="button"
+          ref={menuButtonRef}
+          onClick={onOpenNavigation}
+          aria-label="Open navigation menu"
+          aria-expanded={mobileOpen}
+          className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-2)] text-[var(--text-primary)] transition-colors hover:border-[var(--border-default)] hover:bg-[var(--surface-3)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] lg:hidden"
+        >
+          <Menu className="h-4 w-4" aria-hidden="true" />
+        </button>
+
+        <Suspense
+          fallback={
+            <div
+              className="h-9 w-40 animate-pulse rounded-[var(--radius-md)] bg-[var(--surface-2)]"
+              aria-hidden="true"
+            />
+          }
+        >
+          <OrganizationSwitcher />
+        </Suspense>
+
+        {orgAccess && !orgAccess.loading && orgAccess.accessContext ? (
+          <div className="hidden items-center gap-2 sm:flex">
+            <RoleBadge
+              role={orgAccess.accessContext.role}
+              showReadOnlyHint
+            />
+            {orgAccess.isReadOnly ? (
+              <span className="hidden items-center gap-1 text-xs text-[var(--text-muted)] md:inline-flex">
+                <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Read-only</span>
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label={`Account menu for ${user.displayName}`}
+            className="inline-flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-2)] px-2.5 py-1.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-default)] hover:bg-[var(--surface-3)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          >
+            <Avatar className="h-7 w-7 border-[var(--border-default)]">
+              <AvatarFallback className="text-[11px] font-semibold text-[var(--color-yellow)]">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+            <span className="hidden max-w-[160px] truncate text-[13px] text-[var(--text-strong)] sm:inline">
+              {user.displayName}
+            </span>
+            <ChevronDown
+              className="h-3.5 w-3.5 text-[var(--text-muted)]"
+              aria-hidden="true"
+            />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-60">
+          <DropdownMenuLabel className="font-normal">
+            <div className="space-y-0.5">
+              <p className="truncate text-sm font-semibold text-[var(--text-strong)]">
+                {user.displayName}
+              </p>
+              <p className="truncate font-mono text-xs text-[var(--text-muted)]">
+                {user.email}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/app/profile">
+              <User aria-hidden="true" />
+              <span>Profile &amp; active sessions</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/onboarding">
+              <Compass aria-hidden="true" />
+              <span>Onboarding status</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={signingOut}
+            onSelect={(event) => {
+              event.preventDefault();
+              void handleSignOut();
+            }}
+            className="text-[var(--status-critical)] focus:text-[var(--status-critical)]"
+          >
+            <LogOut aria-hidden="true" />
+            <span>{signingOut ? "Signing out..." : "Sign out"}</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </header>
+  );
+});
+
+function ProtectedShellInner({
+  user,
+  pathname,
+  activeOrgId,
+  children,
+}: {
+  user: SafeUserProfile;
+  pathname: string;
+  activeOrgId: string | null;
+  children: React.ReactNode;
+}) {
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    if (mobileOpen) {
+      setMobileOpen(false);
+    }
+  }
+
+  const openMobileDrawer = useCallback(() => {
+    setMobileOpen(true);
+  }, []);
+
+  const closeMobileDrawer = useCallback((restoreFocus = false) => {
+    setMobileOpen(false);
+    if (restoreFocus) {
+      requestAnimationFrame(() => {
+        menuButtonRef.current?.focus();
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented) {
+        event.preventDefault();
+        closeMobileDrawer(true);
+      }
+    };
+    const handlePopState = () => setMobileOpen(false);
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [mobileOpen, closeMobileDrawer]);
+
+  const handleMobileItemClick = useCallback(() => {
+    setMobileOpen(false);
+  }, []);
+
+  return (
     <>
       <a
         href="#protected-main"
@@ -359,17 +547,10 @@ function ProtectedShellInner({
 
       <div className="flex min-h-svh bg-[var(--surface-canvas)] text-[var(--text-primary)]">
         <aside className="hidden lg:sticky lg:top-0 lg:block lg:h-svh lg:shrink-0">
-          <AnimatedSidebar
-            groups={groups}
-            activeId={activeId}
-            expanded={desktopExpanded}
-            onExpandedChange={onDesktopExpandedChange}
-            brand={expandedBrand}
-            collapsedBrand={collapsedBrand}
-            brandHref="/app"
-            brandLabel="GridAware Dashboard"
-            account={sidebarAccount}
-            ariaLabel="GridAware navigation"
+          <ProtectedSidebar
+            user={user}
+            pathname={pathname}
+            activeOrgId={activeOrgId}
           />
         </aside>
 
@@ -386,119 +567,25 @@ function ProtectedShellInner({
               aria-label="Navigation menu"
               className="fixed inset-y-0 start-0 z-50 flex lg:hidden"
             >
-              <AnimatedSidebar
-                groups={groups}
-                activeId={activeId}
-                expanded={true}
-                hideCollapseButton
+              <ProtectedSidebar
+                user={user}
+                pathname={pathname}
+                activeOrgId={activeOrgId}
+                mobile
                 onClose={() => closeMobileDrawer(true)}
                 onItemClick={handleMobileItemClick}
-                brand={expandedBrand}
-                collapsedBrand={collapsedBrand}
-                brandHref="/app"
-                brandLabel="GridAware Dashboard"
-                account={sidebarAccount}
-                ariaLabel="GridAware navigation"
               />
             </div>
           </>
         ) : null}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-1)]/95 px-4 backdrop-blur-md sm:px-6">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <button
-                type="button"
-                ref={menuButtonRef}
-                onClick={() => setMobileOpen(true)}
-                aria-label="Open navigation menu"
-                aria-expanded={mobileOpen}
-                className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-2)] text-[var(--text-primary)] transition-colors hover:border-[var(--border-default)] hover:bg-[var(--surface-3)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] lg:hidden"
-              >
-                <Menu className="h-4 w-4" aria-hidden="true" />
-              </button>
-
-              <OrganizationSwitcher />
-
-              {orgAccess && !orgAccess.loading && orgAccess.accessContext ? (
-                <div className="hidden items-center gap-2 sm:flex">
-                  <RoleBadge
-                    role={orgAccess.accessContext.role}
-                    showReadOnlyHint
-                  />
-                  {orgAccess.isReadOnly ? (
-                    <span className="hidden items-center gap-1 text-xs text-[var(--text-muted)] md:inline-flex">
-                      <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>Read-only</span>
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-
-            <div className="flex shrink-0 items-center gap-2">
-              <AnimatedThemeToggler />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label={`Account menu for ${user.displayName}`}
-                    className="inline-flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-2)] px-2.5 py-1.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-default)] hover:bg-[var(--surface-3)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                  >
-                    <Avatar className="h-7 w-7 border-[var(--border-default)]">
-                      <AvatarFallback className="text-[11px] font-semibold text-[var(--accent-ink)]">
-                        {userInitials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden max-w-[160px] truncate text-[13px] text-[var(--text-strong)] sm:inline">
-                      {user.displayName}
-                    </span>
-                    <ChevronDown
-                      className="h-3.5 w-3.5 text-[var(--text-muted)]"
-                      aria-hidden="true"
-                    />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-60">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="space-y-0.5">
-                    <p className="truncate text-sm font-semibold text-[var(--text-strong)]">
-                      {user.displayName}
-                    </p>
-                    <p className="truncate font-mono text-xs text-[var(--text-muted)]">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/app/profile">
-                    <User aria-hidden="true" />
-                    <span>Profile &amp; active sessions</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/onboarding">
-                    <Compass aria-hidden="true" />
-                    <span>Onboarding status</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  disabled={signingOut}
-                  onSelect={(event) => {
-                    event.preventDefault();
-                    void handleSignOut();
-                  }}
-                  className="text-[var(--status-critical)] focus:text-[var(--status-critical)]"
-                >
-                  <LogOut aria-hidden="true" />
-                  <span>{signingOut ? "Signing out..." : "Sign out"}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            </div>
-          </header>
+          <ProtectedShellHeader
+            user={user}
+            mobileOpen={mobileOpen}
+            menuButtonRef={menuButtonRef}
+            onOpenNavigation={openMobileDrawer}
+          />
 
           <main
             id="protected-main"
@@ -520,43 +607,25 @@ export function ProtectedAppShell({
   user: SafeUserProfile;
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const activeOrgId = extractActiveOrgId(pathname);
-  const desktopExpanded = useSyncExternalStore(
-    subscribeSidebarExpanded,
-    getSidebarExpandedSnapshot,
-    getSidebarExpandedServerSnapshot,
+  const [pathStore] = useState(createShellPathStore);
+  const { pathname, activeOrgId } = useSyncExternalStore(
+    pathStore.subscribe,
+    pathStore.getSnapshot,
+    pathStore.getServerSnapshot,
   );
 
-  const handleDesktopExpandedChange = useCallback((expanded: boolean) => {
-    writeSidebarExpanded(expanded);
-  }, []);
-
-  if (activeOrgId) {
-    return (
-      <AccessContextProvider organizationId={activeOrgId}>
-        <ProtectedShellInner
-          user={user}
-          pathname={pathname}
-          activeOrgId={activeOrgId}
-          desktopExpanded={desktopExpanded}
-          onDesktopExpandedChange={handleDesktopExpandedChange}
-        >
-          {children}
-        </ProtectedShellInner>
-      </AccessContextProvider>
-    );
-  }
-
   return (
-    <ProtectedShellInner
-      user={user}
-      pathname={pathname}
-      activeOrgId={null}
-      desktopExpanded={desktopExpanded}
-      onDesktopExpandedChange={handleDesktopExpandedChange}
-    >
-      {children}
-    </ProtectedShellInner>
+    <AccessContextProvider organizationId={activeOrgId}>
+      <Suspense fallback={null}>
+        <ProtectedPathnameBridge store={pathStore} />
+      </Suspense>
+      <ProtectedShellInner
+        user={user}
+        pathname={pathname}
+        activeOrgId={activeOrgId}
+      >
+        {children}
+      </ProtectedShellInner>
+    </AccessContextProvider>
   );
 }

@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -13,6 +14,7 @@ import { ApiClientError } from "@/lib/auth/client";
 import { getOrganizationAccessContext } from "@/lib/authorization/api";
 import { can, canAll, isReadOnlyRole } from "@/lib/authorization/permissions.mjs";
 import type { OrganizationAccessContext } from "@/lib/authorization/types";
+import { matchesEntityRef } from "@/lib/navigation/location-urls.mjs";
 
 export interface AccessContextState {
   organizationId: string;
@@ -70,12 +72,18 @@ function AccessContextProviderImpl({
   organizationRef,
   children,
 }: {
-  organizationRef: string;
+  organizationRef: string | null;
   children: React.ReactNode;
 }) {
   const [snapshot, setSnapshot] = useState<FetchSnapshot | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const snapshotRef = useRef<FetchSnapshot | null>(null);
+  const latestRequestRef = useRef(0);
+  const currentRequestKeyRef = useRef("");
+
+  useLayoutEffect(() => {
+    currentRequestKeyRef.current = `${organizationRef ?? ""}:${refreshTick}`;
+  }, [organizationRef, refreshTick]);
 
   const fetchForOrg = useCallback(
     async (targetOrgRef: string, tick: number): Promise<FetchSnapshot> => {
@@ -111,6 +119,9 @@ function AccessContextProviderImpl({
   );
 
   useEffect(() => {
+    if (!organizationRef) {
+      return;
+    }
     if (
       snapshotRef.current &&
       snapshotRef.current.refreshTick === refreshTick &&
@@ -119,30 +130,48 @@ function AccessContextProviderImpl({
       return;
     }
     let cancelled = false;
+    const requestKey = currentRequestKeyRef.current;
+    const requestId = ++latestRequestRef.current;
     void fetchForOrg(organizationRef, refreshTick).then((result) => {
-      if (!cancelled) {
-        snapshotRef.current = result;
-        setSnapshot(result);
+      if (
+        cancelled ||
+        requestId !== latestRequestRef.current ||
+        requestKey !== currentRequestKeyRef.current
+      ) {
+        return;
       }
+      snapshotRef.current = result;
+      setSnapshot(result);
     });
     return () => {
       cancelled = true;
     };
   }, [organizationRef, refreshTick, fetchForOrg]);
 
-  const isCurrentOrgSnapshot = snapshotMatchesOrgRef(snapshot, organizationRef);
-  const loading = !isCurrentOrgSnapshot;
-  const accessContext = isCurrentOrgSnapshot ? snapshot!.accessContext : null;
-  const errorStatus = isCurrentOrgSnapshot ? snapshot!.errorStatus : null;
-  const errorMessage = isCurrentOrgSnapshot ? snapshot!.errorMessage : null;
-  const canonicalOrgId = accessContext?.organizationId ?? organizationRef;
+  const isCurrentOrgSnapshot =
+    organizationRef === null ||
+    snapshotMatchesOrgRef(snapshot, organizationRef);
+  const loading = organizationRef !== null && !isCurrentOrgSnapshot;
+  const accessContext =
+    organizationRef !== null && isCurrentOrgSnapshot
+      ? snapshot!.accessContext
+      : null;
+  const errorStatus =
+    organizationRef !== null && isCurrentOrgSnapshot
+      ? snapshot!.errorStatus
+      : null;
+  const errorMessage =
+    organizationRef !== null && isCurrentOrgSnapshot
+      ? snapshot!.errorMessage
+      : null;
+  const canonicalOrgId = accessContext?.organizationId ?? organizationRef ?? "";
   const canonicalOrgSlug =
     accessContext?.organizationSlug && accessContext.organizationSlug.length > 0
       ? accessContext.organizationSlug
-      : organizationRef;
+      : organizationRef ?? "";
 
   useEffect(() => {
-    if (typeof BroadcastChannel === "undefined") {
+    if (!organizationRef || typeof BroadcastChannel === "undefined") {
       return;
     }
 
@@ -151,6 +180,7 @@ function AccessContextProviderImpl({
 
     authChannel.onmessage = (event: MessageEvent<{ type?: string }>) => {
       if (event.data?.type === "SESSION_INVALIDATED") {
+        latestRequestRef.current += 1;
         const invalidated: FetchSnapshot = {
           organizationRef,
           refreshTick,
@@ -188,7 +218,21 @@ function AccessContextProviderImpl({
   }, [organizationRef, canonicalOrgId, canonicalOrgSlug, refreshTick]);
 
   const refresh = useCallback(async () => {
+    if (!organizationRef) {
+      return;
+    }
+    const requestKey = `${organizationRef}:${refreshTick}`;
+    if (requestKey !== currentRequestKeyRef.current) {
+      return;
+    }
+    const requestId = ++latestRequestRef.current;
     const result = await fetchForOrg(organizationRef, refreshTick);
+    if (
+      requestId !== latestRequestRef.current ||
+      requestKey !== currentRequestKeyRef.current
+    ) {
+      return;
+    }
     snapshotRef.current = result;
     setSnapshot(result);
   }, [organizationRef, refreshTick, fetchForOrg]);
@@ -202,7 +246,7 @@ function AccessContextProviderImpl({
     () => ({
       organizationId: canonicalOrgId,
       organizationSlug: canonicalOrgSlug,
-      organizationRef,
+      organizationRef: organizationRef ?? "",
       accessContext,
       permissions: permissionSet,
       loading,
@@ -231,23 +275,80 @@ function AccessContextProviderImpl({
   );
 }
 
-export function AccessContextProvider({
+function accessContextMatchesOrgRef(
+  context: AccessContextState | null,
+  orgRef: string,
+): boolean {
+  if (!context) return false;
+  return (
+    matchesEntityRef(
+      orgRef,
+      context.organizationRef,
+      context.organizationSlug,
+    ) ||
+    matchesEntityRef(orgRef, context.organizationId, context.organizationSlug)
+  );
+}
+
+export function OrganizationAccessContextProvider({
   organizationId,
   children,
 }: {
   organizationId: string;
   children: React.ReactNode;
 }) {
-  const parentContext = useContext(AccessContext);
-  const normalizedTarget = organizationId.toLowerCase();
-  if (
-    parentContext &&
-    (parentContext.organizationRef.toLowerCase() === normalizedTarget ||
-      parentContext.organizationId === organizationId ||
-      parentContext.organizationSlug.toLowerCase() === normalizedTarget)
-  ) {
-    return <>{children}</>;
+  const parentContext = useOptionalAccessContext();
+  const [cachedContext, setCachedContext] = useState<AccessContextState | null>(
+    null,
+  );
+  const parentMatches = accessContextMatchesOrgRef(parentContext, organizationId);
+
+  if (parentMatches && parentContext?.accessContext && cachedContext !== parentContext) {
+    setCachedContext(parentContext);
   }
+
+  const loadingContext = useMemo<AccessContextState>(
+    () => ({
+      organizationId,
+      organizationSlug: organizationId,
+      organizationRef: organizationId,
+      accessContext: null,
+      permissions: new Set<string>(),
+      loading: true,
+      errorStatus: null,
+      errorMessage: null,
+      isReadOnly: false,
+      can: () => false,
+      canAll: () => false,
+      refresh: async () => {},
+    }),
+    [organizationId],
+  );
+  const cachedMatches = accessContextMatchesOrgRef(
+    cachedContext,
+    organizationId,
+  );
+  const value: AccessContextState =
+    parentContext && parentMatches && !parentContext.loading
+      ? parentContext
+      : cachedContext && cachedMatches
+        ? cachedContext
+        : parentContext && parentMatches
+          ? parentContext
+          : loadingContext;
+
+  return (
+    <AccessContext.Provider value={value}>{children}</AccessContext.Provider>
+  );
+}
+
+export function AccessContextProvider({
+  organizationId,
+  children,
+}: {
+  organizationId: string | null;
+  children: React.ReactNode;
+}) {
   return (
     <AccessContextProviderImpl organizationRef={organizationId}>
       {children}

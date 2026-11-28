@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
+import { TimeZoneCombobox } from "@/components/locations/time-zone-combobox";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,20 +25,6 @@ import { Label } from "@/components/ui/label";
 import { ApiClientError } from "@/lib/auth/client";
 import { createOrganization } from "@/lib/authorization/api";
 import { orgOverviewPath } from "@/lib/navigation/location-urls.mjs";
-
-const COMMON_TIMEZONES = [
-  "UTC",
-  "Africa/Cairo",
-  "Europe/London",
-  "Europe/Berlin",
-  "Asia/Riyadh",
-  "Asia/Dubai",
-  "America/New_York",
-  "America/Chicago",
-  "America/Los_Angeles",
-  "Asia/Singapore",
-  "Asia/Tokyo",
-];
 
 function slugify(value: string): string {
   return value
@@ -57,11 +44,6 @@ export default function CreateOrganizationPage() {
       return "UTC";
     }
   }, []);
-
-  const timezoneOptions = useMemo(() => {
-    const set = new Set([detectedTz, ...COMMON_TIMEZONES]);
-    return [...set];
-  }, [detectedTz]);
 
   const [name, setName] = useState("");
   const [customSlug, setCustomSlug] = useState("");
@@ -196,20 +178,12 @@ export default function CreateOrganizationPage() {
 
             <div className="space-y-2">
               <Label htmlFor="org-timezone">Default operational timezone</Label>
-              <select
+              <TimeZoneCombobox
                 id="org-timezone"
-                name="timezone"
                 value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
+                onValueChange={setTimezone}
                 disabled={submitting}
-                className="flex h-11 w-full rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-              >
-                {timezoneOptions.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz}
-                  </option>
-                ))}
-              </select>
+              />
               <p className="text-xs text-[var(--text-muted)]">
                 Stored telemetry and audit instants remain in UTC; display times
                 format to your organization or site timezone.

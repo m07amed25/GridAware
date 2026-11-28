@@ -99,6 +99,10 @@ model User {
   sentInvitations     OrganizationInvitation[] @relation("InvitationSender")
   acceptedInvitations OrganizationInvitation[] @relation("InvitationAcceptor")
   auditLogs           AuditLog[]               @relation("AuditActor")
+  createdDevices      Device[]                 @relation("DeviceCreator")
+  createdCredentials  DeviceCredential[]       @relation("CredentialCreator")
+  createdSensors      Sensor[]                 @relation("SensorCreator")
+  sensorAssignments   DeviceSensorAssignment[] @relation("AssignmentCreator")
 
   @@index([status, createdAt])
   @@map("users")
@@ -117,6 +121,9 @@ model Organization {
   invitations OrganizationInvitation[]
   sites       Site[]
   buildings   Building[]
+  assets      Asset[]
+  devices     Device[]
+  sensors     Sensor[]
   auditLogs   AuditLog[]
 
   @@index([status, createdAt])
@@ -270,6 +277,8 @@ model Site {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   buildings    Building[]
+  assets       Asset[]
+  devices      Device[]
 
   @@unique([id, organizationId])
   @@unique([organizationId, code])
@@ -295,6 +304,7 @@ model Building {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   site         Site         @relation(fields: [siteId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  assets       Asset[]
 
   @@unique([id, organizationId])
   @@unique([id, siteId, organizationId])
@@ -302,4 +312,228 @@ model Building {
   @@index([organizationId, siteId, status, archivedAt, createdAt])
   @@index([organizationId, status])
   @@map("buildings")
+}
+
+enum AssetStatus {
+  ACTIVE
+  INACTIVE
+  UNDER_MAINTENANCE
+  DECOMMISSIONED
+}
+
+enum DeviceType {
+  GATEWAY
+  SIMULATOR
+  EDGE_CONTROLLER
+  OTHER
+}
+
+enum DeviceStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REVOKED
+  RETIRED
+}
+
+enum CredentialType {
+  PASSWORD
+  CERTIFICATE
+}
+
+enum CredentialStatus {
+  ACTIVE
+  ROTATED
+  REVOKED
+  EXPIRED
+}
+
+enum SensorStatus {
+  PLANNED
+  ACTIVE
+  MAINTENANCE
+  DISABLED
+  RETIRED
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum MetricValueType {
+  NUMERIC
+}
+
+model Asset {
+  id             String      @id @default(uuid()) @db.Uuid
+  organizationId String      @db.Uuid
+  siteId         String      @db.Uuid
+  buildingId     String?     @db.Uuid
+  assetCode      String      @db.VarChar(80)
+  name           String      @db.VarChar(120)
+  assetType      String      @db.VarChar(60)
+  status         AssetStatus @default(ACTIVE)
+  createdAt      DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime    @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  site         Site         @relation(fields: [siteId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  building     Building?    @relation(fields: [buildingId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  devices      Device[]
+  sensors      Sensor[]
+
+  @@unique([organizationId, assetCode])
+  @@unique([id, organizationId])
+  @@index([organizationId, siteId])
+  @@map("assets")
+}
+
+model Device {
+  id                 String       @id @default(uuid()) @db.Uuid
+  organizationId     String       @db.Uuid
+  siteId             String?      @db.Uuid
+  assetId            String?      @db.Uuid
+  deviceKey          String       @db.VarChar(100)
+  name               String       @db.VarChar(120)
+  description        String?      @db.VarChar(500)
+  deviceType         DeviceType   @default(SIMULATOR)
+  status             DeviceStatus @default(PENDING)
+  serialNumber       String?      @db.VarChar(120)
+  manufacturer       String?      @db.VarChar(120)
+  model              String?      @db.VarChar(120)
+  firmwareVersion    String?      @db.VarChar(80)
+  metadata           Json?
+  lastSeenAt         DateTime?    @db.Timestamptz(6)
+  lastConnectedAt    DateTime?    @db.Timestamptz(6)
+  lastDisconnectedAt DateTime?    @db.Timestamptz(6)
+  revokedAt          DateTime?    @db.Timestamptz(6)
+  createdById        String       @db.Uuid
+  createdAt          DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime     @updatedAt @db.Timestamptz(6)
+
+  organization Organization             @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  site         Site?                    @relation(fields: [siteId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  asset        Asset?                   @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  createdBy    User                     @relation("DeviceCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  credentials  DeviceCredential[]
+  assignments  DeviceSensorAssignment[]
+
+  @@unique([organizationId, deviceKey])
+  @@unique([id, organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, lastSeenAt])
+  @@map("devices")
+}
+
+model DeviceCredential {
+  id                String           @id @default(uuid()) @db.Uuid
+  organizationId    String           @db.Uuid
+  deviceId          String           @db.Uuid
+  credentialVersion Int
+  credentialType    CredentialType   @default(PASSWORD)
+  secretHash        String           @db.Text
+  status            CredentialStatus @default(ACTIVE)
+  issuedAt          DateTime         @default(now()) @db.Timestamptz(6)
+  expiresAt         DateTime?        @db.Timestamptz(6)
+  lastUsedAt        DateTime?        @db.Timestamptz(6)
+  revokedAt         DateTime?        @db.Timestamptz(6)
+  createdById       String           @db.Uuid
+  createdAt         DateTime         @default(now()) @db.Timestamptz(6)
+
+  device    Device @relation(fields: [deviceId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  createdBy User   @relation("CredentialCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@unique([deviceId, credentialVersion])
+  @@index([organizationId, deviceId, status])
+  @@map("device_credentials")
+}
+
+model Sensor {
+  id                               String       @id @default(uuid()) @db.Uuid
+  organizationId                   String       @db.Uuid
+  assetId                          String       @db.Uuid
+  sensorKey                        String       @db.VarChar(120)
+  name                             String       @db.VarChar(120)
+  description                      String?      @db.VarChar(500)
+  sensorType                       String       @db.VarChar(80)
+  status                           SensorStatus @default(PLANNED)
+  installationLocation             String?      @db.VarChar(160)
+  manufacturer                     String?      @db.VarChar(120)
+  model                            String?      @db.VarChar(120)
+  serialNumber                     String?      @db.VarChar(120)
+  samplingIntervalSeconds          Int?
+  expectedReportingIntervalSeconds Int?
+  lastReadingAt                    DateTime?    @db.Timestamptz(6)
+  createdById                      String       @db.Uuid
+  createdAt                        DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt                        DateTime     @updatedAt @db.Timestamptz(6)
+
+  organization Organization             @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  asset        Asset                    @relation(fields: [assetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  createdBy    User                     @relation("SensorCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  assignments  DeviceSensorAssignment[]
+  metrics      SensorMetric[]
+
+  @@unique([organizationId, sensorKey])
+  @@unique([id, organizationId])
+  @@index([organizationId, assetId])
+  @@index([organizationId, status])
+  @@map("sensors")
+}
+
+model MetricDefinition {
+  key            String          @id @db.VarChar(80)
+  displayName    String          @db.VarChar(120)
+  description    String          @db.VarChar(500)
+  dimension      String          @db.VarChar(60)
+  canonicalUnit  String          @db.VarChar(20)
+  supportedUnits String[]
+  valueType      MetricValueType @default(NUMERIC)
+  isActive       Boolean         @default(true)
+
+  sensorMetrics SensorMetric[]
+
+  @@map("metric_definitions")
+}
+
+model SensorMetric {
+  id                String   @id @default(uuid()) @db.Uuid
+  organizationId    String   @db.Uuid
+  sensorId          String   @db.Uuid
+  metricKey         String   @db.VarChar(80)
+  unit              String   @db.VarChar(20)
+  precision         Int?
+  minPlausibleValue Float?
+  maxPlausibleValue Float?
+  isPrimary         Boolean  @default(true)
+  configuration     Json?
+  createdAt         DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
+
+  sensor           Sensor           @relation(fields: [sensorId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  metricDefinition MetricDefinition @relation(fields: [metricKey], references: [key], onDelete: Restrict)
+
+  @@unique([sensorId, metricKey])
+  @@index([organizationId, sensorId])
+  @@map("sensor_metrics")
+}
+
+model DeviceSensorAssignment {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @db.Uuid
+  deviceId       String           @db.Uuid
+  sensorId       String           @db.Uuid
+  status         AssignmentStatus @default(ACTIVE)
+  assignedAt     DateTime         @default(now()) @db.Timestamptz(6)
+  unassignedAt   DateTime?        @db.Timestamptz(6)
+  assignedById   String           @db.Uuid
+
+  device     Device @relation(fields: [deviceId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  sensor     Sensor @relation(fields: [sensorId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  assignedBy User   @relation("AssignmentCreator", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, sensorId, status])
+  @@index([organizationId, deviceId, status])
+  @@map("device_sensor_assignments")
 }

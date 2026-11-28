@@ -27,7 +27,7 @@ export default function OrganizationLayout({
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-5xl space-y-6" aria-busy="true">
+        <div className="mx-auto space-y-6" aria-busy="true">
           <Skeleton className="h-52 w-full" />
         </div>
       }
