@@ -3,6 +3,8 @@ export type ShellNavIconKey =
   | "onboarding"
   | "org-overview"
   | "org-sites"
+  | "org-devices"
+  | "org-sensors"
   | "org-members"
   | "org-roles"
   | "org-settings";

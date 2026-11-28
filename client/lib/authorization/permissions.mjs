@@ -96,6 +96,18 @@ export function getVisibleOrgNavItems(organizationId, permissions) {
       requiredPermissions: ["sites:read"],
     },
     {
+      id: "devices",
+      label: "Devices",
+      href: `/app/organizations/${organizationId}/devices`,
+      requiredPermissions: ["devices:read"],
+    },
+    {
+      id: "sensors",
+      label: "Sensors",
+      href: `/app/organizations/${organizationId}/sensors`,
+      requiredPermissions: ["sensors:read"],
+    },
+    {
       id: "members",
       label: "Members & Roles",
       href: `/app/organizations/${organizationId}/members`,

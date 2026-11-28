@@ -8,6 +8,16 @@
 
 **Input**: User description: "create a spec and read GridAware Phase 5.6 Sensors & Device Management README, examples, and all project docs"
 
+## Clarifications
+
+### Session 2026-11-27
+
+- Q: Since the Assets & Equipment module is not yet implemented in the repository, how should Sensors & Device Management handle the required asset relationship? → A: Include a minimal tenant-scoped `Asset` model and basic management in this feature's scope so Sensors and Devices link to real assets immediately.
+- Q: Which canonical MQTT topic namespace should devices use, given the difference between the Phase 5.6 README and the Phase 3.3 architecture contract? → A: `gridaware/v1/orgs/{organizationId}/devices/{deviceKey}/{telemetry|status|availability}` (site-independent, uses `deviceKey`).
+- Q: When an administrator rotates a device's credentials, when should the previous credential become invalid? → A: Invalidate the previous credential immediately when the new credential is issued (one active credential per device at a time).
+- Q: How should a provisioned `PENDING` device transition to `ACTIVE`? → A: Explicit administrator activation action (`devices.activate`) allowed once the device has an active provisioned credential (does not block on prior broker connection).
+- Q: Should the `ENGINEER` role be permitted to provision and rotate device credentials, or should credential issuance be restricted to `OWNER` and `FACILITY_MANAGER`? → A: Restrict credential provisioning and rotation to `OWNER` and `FACILITY_MANAGER` only; `ENGINEER` can register/configure devices and sensors but not issue secrets.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Register and Provision a Connected Device (Priority: P1)
@@ -23,7 +33,7 @@ An authorized organization member (such as an Owner, Facility Manager, or Engine
 1. **Given** an authenticated user with device creation permission in Organization A, **When** they register a device with a valid name, unique device key, device type, and optional asset/site belonging to Organization A, **Then** the device is created in `PENDING` status and an audit event is recorded.
 2. **Given** a device in `PENDING` status and a user with credential provisioning permission, **When** the user provisions credentials for the device, **Then** the system generates a unique credential, displays the secret exactly once with a clear warning that it cannot be retrieved later, stores only a non-plaintext verifier, and configures the device's isolated publish namespace.
 3. **Given** a provisioned device whose credential has been issued, **When** an authorized user views the device or its credential list afterward, **Then** only non-secret credential metadata (version, type, status, issued/expiry timestamps) is shown and the secret is never exposed.
-4. **Given** a provisioned device in `PENDING` status, **When** it completes the activation workflow (verifying identity and readiness), **Then** its status transitions to `ACTIVE` and an activation audit event is recorded.
+4. **Given** a device in `PENDING` status that has an active provisioned credential, **When** an authorized user (`devices.activate`) invokes the activation action, **Then** its status transitions to `ACTIVE`, its `deviceKey` becomes immutable, and an activation audit event is recorded.
 5. **Given** a user attempting to register a device linked to an asset or site from Organization B, **When** the request is submitted, **Then** the system rejects the request without leaking whether the foreign resource exists.
 
 ---
@@ -58,7 +68,7 @@ An authorized administrator suspends a misbehaving device, rotates credentials o
 
 1. **Given** an `ACTIVE` device, **When** an authorized user suspends it, **Then** the device transitions to `SUSPENDED`, its authentication and publish access are denied, and an audit event is recorded.
 2. **Given** a `SUSPENDED` device, **When** an authorized user reactivates it, **Then** it returns to `ACTIVE` status and regains publish access to its assigned namespace.
-3. **Given** an `ACTIVE` device, **When** an authorized user rotates its credentials, **Then** a new credential version is issued (secret returned once), the previous credential version is transitioned to `ROTATED`/`REVOKED` per the rotation policy, and an audit event is recorded without exposing secret material.
+3. **Given** an `ACTIVE` device, **When** an authorized user rotates its credentials, **Then** a new credential version is issued (secret returned once), the previous credential version is immediately invalidated (`ROTATED`) so only one credential is active per device, and an audit event is recorded without exposing secret material.
 4. **Given** an `ACTIVE` or `SUSPENDED` device, **When** an authorized user revokes it, **Then** its status permanently becomes `REVOKED`, all credentials and access are invalidated immediately, and any attempt to reactivate it via a standard update is rejected.
 5. **Given** an `ACTIVE` or `SUSPENDED` device, **When** an authorized user retires it, **Then** its status becomes `RETIRED`, it can no longer authenticate or publish, and its historical metadata and audit trail remain preserved.
 
@@ -132,8 +142,9 @@ A local simulator device authenticates using its provisioned per-device credenti
 ### Functional Requirements
 
 #### Device Registry & Lifecycle
+- **FR-000**: System MUST provide a minimal tenant-scoped `Asset` foundation (organization, site, optional building, name, asset code, asset type, and status) with basic creation and listing so that Devices and Sensors link to real, tenant-validated assets without temporary workarounds.
 - **FR-001**: System MUST allow authorized users (`devices.create`) to register a device under their active organization with a display name, unique organization-scoped `deviceKey` (normalized lowercase identifier), `deviceType` (`GATEWAY`, `SIMULATOR`, `EDGE_CONTROLLER`, `OTHER`), and optional metadata (description, serial number, manufacturer, model, firmware version, primary asset, and site installation context).
-- **FR-002**: System MUST create newly registered devices in `PENDING` status and prevent `PENDING` devices from publishing production telemetry until credentials are provisioned and the activation workflow succeeds.
+- **FR-002**: System MUST create newly registered devices in `PENDING` status and require both an active provisioned credential and an explicit authorized activation action (`devices.activate`) before transitioning to `ACTIVE` and permitting production telemetry publication.
 - **FR-003**: System MUST enforce explicit device lifecycle transitions (`PENDING -> ACTIVE`, `ACTIVE <-> SUSPENDED`, `ACTIVE/SUSPENDED -> REVOKED`, `ACTIVE/SUSPENDED -> RETIRED`) and reject invalid transitions or direct status overrides via generic metadata updates.
 - **FR-004**: System MUST treat `deviceKey` as immutable once a device has been activated.
 - **FR-005**: System MUST permanently prevent `REVOKED` and `RETIRED` devices from being reactivated through ordinary update or reactivation workflows, while preserving their historical metadata and audit trail.
@@ -141,8 +152,8 @@ A local simulator device authenticates using its provisioned per-device credenti
 #### Device Credentials & Security
 - **FR-006**: System MUST allow authorized users (`device_credentials.provision`) to issue unique per-device credentials (never shared across devices or with human user accounts) and return the plaintext secret exactly once in the provisioning response.
 - **FR-007**: System MUST store only a non-plaintext cryptographic verifier/hash or certificate metadata/fingerprint for every `DeviceCredential`; plaintext secrets MUST NEVER be stored, returned by read endpoints, or written to logs, error messages, or audit payloads.
-- **FR-008**: System MUST support credential rotation (`devices.rotate_credentials`) by issuing a new versioned credential and invalidating the previous credential version according to a controlled rotation sequence, as well as immediate revocation (`devices.revoke`) on suspected compromise.
-- **FR-009**: System MUST synchronize device credential and topic access policies with the messaging broker so that each active device can publish only to its own versioned topic namespace (`telemetry`, `status`, `availability`) and cannot publish or subscribe to another device's or organization's namespace.
+- **FR-008**: System MUST support credential rotation (`devices.rotate_credentials`) by issuing a new versioned credential and immediately invalidating the previous credential version (maintaining at most one active credential per device at a time), as well as immediate revocation (`devices.revoke`) on suspected compromise.
+- **FR-009**: System MUST synchronize device credential and topic access policies with the messaging broker so that each active device can publish only to its own versioned, site-independent topic namespace (`gridaware/v1/orgs/{organizationId}/devices/{deviceKey}/{telemetry|status|availability}`) and cannot publish or subscribe to another device's or organization's namespace.
 - **FR-010**: System MUST deny broker authentication and publish access to unknown, `PENDING` (for production telemetry), `SUSPENDED`, `REVOKED`, and `RETIRED` devices.
 
 #### Sensor Registry, Metrics & Assignments
@@ -154,7 +165,7 @@ A local simulator device authenticates using its provisioned per-device credenti
 
 #### Tenant Isolation, RBAC & Auditability
 - **FR-016**: System MUST derive the active organization context exclusively from the authenticated user's membership (for human requests) or the broker-authenticated device identity (for device messages), and MUST reject any cross-tenant asset, site, device, or sensor linkage without leaking resource existence.
-- **FR-017**: System MUST enforce role-based permissions on all device, credential, and sensor operations using the canonical RBAC permission catalog (restricting credential provisioning/rotation and device suspension/revocation to authorized roles, and scoping Technician access to assigned scope only).
+- **FR-017**: System MUST enforce role-based permissions on all device, credential, and sensor operations using the canonical RBAC permission catalog, restricting credential provisioning/rotation and device suspension/revocation strictly to `OWNER` and `FACILITY_MANAGER` roles (`ENGINEER` may register/configure devices and sensors but not issue secrets), and scoping `TECHNICIAN` access to assigned scope only.
 - **FR-018**: System MUST record tamper-resistant, redacted audit events for all security-sensitive device, credential, sensor, and assignment lifecycle actions (including actor type, actor ID, organization ID, action, target type/ID, timestamp, and correlation/request ID).
 
 #### Freshness Semantics & Envelope Validation
@@ -167,6 +178,7 @@ A local simulator device authenticates using its provisioned per-device credenti
 
 ### Key Entities *(include if feature involves data)*
 
+- **Asset (Minimal Foundation)**: A maintainable item of infrastructure (e.g., backup generator) owned by one Organization and one Site (with optional Building), providing the tenant-validated equipment anchor for Devices and Sensors.
 - **Device**: A physical or simulated connected endpoint (gateway, simulator, edge controller) owned by one Organization, optionally associated with a Site and primary Asset. Carries a unique organization-scoped `deviceKey`, `deviceType`, lifecycle `status`, hardware/firmware metadata, and connectivity timestamps (`lastSeenAt`, `lastConnectedAt`, `lastDisconnectedAt`).
 - **DeviceCredential**: A versioned authentication credential belonging to one Device and Organization. Carries `credentialVersion`, `credentialType` (password or certificate), non-plaintext `secretHash`/fingerprint, lifecycle `status` (`ACTIVE`, `ROTATED`, `REVOKED`, `EXPIRED`), and issuance/expiry/revocation timestamps.
 - **Sensor**: A logical measurement source owned by one Organization and attached to exactly one Asset. Carries a unique organization-scoped `sensorKey`, `sensorType`, lifecycle `status`, installation metadata, `samplingIntervalSeconds`, `expectedReportingIntervalSeconds`, and `lastReadingAt`.
@@ -188,10 +200,10 @@ A local simulator device authenticates using its provisioned per-device credenti
 
 ## Assumptions
 
-- **Existing Phase 5.1–5.5 Foundations**: Authentication, Organizations, RBAC, Sites & Buildings, and Assets exist (or where Assets are not yet implemented in code, a clearly marked development boundary/stub or prerequisite phase will be respected without weakening tenant/RBAC enforcement).
+- **Existing Phase 5.1–5.4 Foundations & Minimal Asset Scope**: Authentication, Organizations, RBAC, and Sites & Buildings exist in the repository; a minimal tenant-scoped `Asset` model and basic management are included in this feature's scope so Devices and Sensors link to real assets immediately.
 - **Simulator-First MVP**: Initial devices are simulated by the Python infrastructure simulator; the domain model and security boundaries are designed to support physical gateways later without schema redesign.
 - **Single Active Publisher per Sensor**: In the MVP, a device may publish for many sensors, while each sensor has at most one active publishing device at a time.
 - **Single Active Metric per Sensor**: In the MVP, each sensor maps to one primary active metric definition from the seeded canonical catalog; customer-defined custom metrics and multi-channel sensors are deferred.
-- **Credential Provisioning Role Policy**: By default, `Owner` and `Facility Manager` roles may provision/rotate credentials and suspend/revoke devices; `Engineer` credential issuance is restricted by default until operational procedures are established; `Technician` access is restricted to assigned scope only.
+- **Credential Provisioning Role Policy**: `OWNER` and `FACILITY_MANAGER` roles are permitted to provision/rotate credentials and suspend/revoke devices; `ENGINEER` may register and configure devices/sensors but is not permitted to issue or rotate secrets; `TECHNICIAN` access is restricted to assigned scope only.
 - **Scope Boundary (No Telemetry Persistence Pipeline)**: High-volume telemetry storage, time-series charts, anomaly detection, risk scoring, ML serving, industrial field protocols (Modbus/OPC UA), remote firmware updates, and physical equipment control are explicitly out of scope for this phase and belong to subsequent phases.
 - **Local vs. Production Broker Auth**: Local development may use a per-device credential mechanism (such as a local password/ACL file) with anonymous access disabled outside isolated local dev, while staging/production requires TLS and a reviewed per-device auth/ACL service.

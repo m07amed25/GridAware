@@ -12,9 +12,11 @@ import React, {
   useSyncExternalStore,
 } from "react";
 import {
+  Activity,
   Building2,
   ChevronDown,
   Compass,
+  Cpu,
   Eye,
   LayoutDashboard,
   LogOut,
@@ -98,6 +100,8 @@ const NAV_ICON_BY_KEY: Record<ShellNavIconKey, React.ReactNode> = {
   onboarding: <Compass aria-hidden="true" />,
   "org-overview": <Building2 aria-hidden="true" />,
   "org-sites": <MapPin aria-hidden="true" />,
+  "org-devices": <Cpu aria-hidden="true" />,
+  "org-sensors": <Activity aria-hidden="true" />,
   "org-members": <Users aria-hidden="true" />,
   "org-roles": <Shield aria-hidden="true" />,
   "org-settings": <Settings aria-hidden="true" />,

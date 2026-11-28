@@ -55,6 +55,12 @@ export function resolveActiveSidebarId(pathname, activeOrgId) {
       if (rest === "/sites" || rest.startsWith("/sites/")) {
         return "org-sites";
       }
+      if (rest === "/devices" || rest.startsWith("/devices/")) {
+        return "org-devices";
+      }
+      if (rest === "/sensors" || rest.startsWith("/sensors/")) {
+        return "org-sensors";
+      }
       if (rest === "/members" || rest.startsWith("/members/")) {
         return "org-members";
       }

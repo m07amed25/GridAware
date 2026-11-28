@@ -45,7 +45,7 @@ function OrgSubShell({ children }: { children: React.ReactNode }) {
     return <PermissionDeniedState variant="not-found" />;
   }
 
-  return <div className="mx-auto max-w-5xl space-y-6">{children}</div>;
+  return <div className="mx-auto space-y-6">{children}</div>;
 }
 
 export function OrganizationShell({
