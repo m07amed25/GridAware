@@ -26,6 +26,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -90,9 +91,12 @@ export default function OrganizationSettingsPage() {
 
   if (ctxLoading || !loadedForOrg) {
     return (
-      <div className="space-y-4" aria-busy="true">
-        <Skeleton className="h-10 w-56" />
-        <Skeleton className="h-52 w-full" />
+      <div className="w-full space-y-6" aria-busy="true">
+        <div className="space-y-3">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-80 max-w-full" />
+        </div>
+        <Skeleton className="h-80 w-full" />
       </div>
     );
   }
@@ -147,18 +151,31 @@ export default function OrganizationSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-strong)]">
+    <div className="w-full space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-3">
+          <h1 className="text-[28px] font-semibold leading-8 tracking-[-0.02em] text-[var(--text-strong)]">
             Organization Settings
           </h1>
-          <p className="font-mono text-xs text-[var(--text-muted)]">
-            Slug: {state.profile.slug} · Status: {state.profile.status}
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="font-mono text-xs text-[var(--text-muted)]">
+              Slug: {state.profile.slug}
+            </p>
+            <Badge
+              variant={
+                state.profile.status === "ACTIVE" ? "success" : "secondary"
+              }
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-current"
+                aria-hidden="true"
+              />
+              <span>Status: {state.profile.status}</span>
+            </Badge>
+          </div>
         </div>
         {!canUpdate ? (
-          <Badge variant="secondary">
+          <Badge variant="secondary" className="self-start">
             <Lock className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Read-only (Owner required to edit)</span>
           </Badge>
@@ -168,7 +185,7 @@ export default function OrganizationSettingsPage() {
       {formError ? (
         <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-[var(--radius-md)] border border-[var(--status-critical)] bg-[var(--surface-2)] px-4 py-3 text-sm text-[var(--text-strong)]"
+          className="flex items-start gap-2.5 rounded-[var(--radius-md)] border border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] px-4 py-3 text-sm text-[var(--text-strong)]"
         >
           <AlertTriangle
             className="mt-0.5 h-4 w-4 shrink-0 text-[var(--status-critical)]"
@@ -179,75 +196,90 @@ export default function OrganizationSettingsPage() {
       ) : null}
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings
-              className="h-4 w-4 text-[var(--color-yellow)]"
-              aria-hidden="true"
-            />
-            <span>General profile</span>
-          </CardTitle>
-          <CardDescription>
-            Display name and default timezone for dashboards, schedules, and
-            reports.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSave(e)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="settings-org-name">Organization name</Label>
-              <Input
-                id="settings-org-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={!canUpdate || saving}
-                required
-                minLength={2}
-                maxLength={120}
+        <form onSubmit={(event) => void handleSave(event)}>
+          <CardHeader className="gap-1.5 border-b border-[var(--border-subtle)]">
+            <CardTitle className="flex items-center gap-2">
+              <Settings
+                className="h-4 w-4 text-[var(--color-yellow)]"
+                aria-hidden="true"
               />
-            </div>
+              <span>General profile</span>
+            </CardTitle>
+            <CardDescription>
+              Display name and default timezone for dashboards, schedules, and
+              reports.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="settings-org-name">Organization name</Label>
+                <Input
+                  id="settings-org-name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  disabled={!canUpdate || saving}
+                  required
+                  minLength={2}
+                  maxLength={120}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="settings-org-timezone">Default timezone</Label>
-              <TimeZoneCombobox
-                id="settings-org-timezone"
-                value={timezone}
-                onValueChange={setTimezone}
-                disabled={!canUpdate || saving}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="settings-org-timezone">Default timezone</Label>
+                <TimeZoneCombobox
+                  id="settings-org-timezone"
+                  value={timezone}
+                  onValueChange={setTimezone}
+                  disabled={!canUpdate || saving}
+                  ariaDescribedBy="settings-org-timezone-hint"
+                />
+                <p
+                  id="settings-org-timezone-hint"
+                  className="text-xs leading-4 text-[var(--text-muted)]"
+                >
+                  Search by city, region, or UTC offset.
+                </p>
+              </div>
             </div>
-
-            {canUpdate ? (
-              <Button type="submit" disabled={saving}>
-                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+          </CardContent>
+          {canUpdate ? (
+            <CardFooter className="justify-end border-t border-[var(--border-subtle)] px-6 py-4">
+              <Button type="submit" loading={saving}>
+                {!saving ? (
+                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                ) : null}
                 <span>{saving ? "Saving..." : "Save changes"}</span>
               </Button>
-            ) : null}
-          </form>
-        </CardContent>
+            </CardFooter>
+          ) : null}
+        </form>
       </Card>
 
       <PermissionGate requires="organization:archive">
-        <Card className="border-[var(--status-critical)]/40">
-          <CardHeader>
-            <CardTitle className="text-[var(--status-critical)]">
-              Danger zone — Archive organization
-            </CardTitle>
-            <CardDescription>
-              Archiving immediately revokes active tenant access for all members
-              while retaining historical operational and audit records.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Card className="border-[var(--status-critical-border)]">
+          <div className="flex flex-col gap-5 p-6 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
+              <CardTitle className="flex items-center gap-2 text-[var(--status-critical)]">
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                <span>Danger zone — Archive organization</span>
+              </CardTitle>
+              <CardDescription className="max-w-2xl">
+                Archiving immediately revokes active tenant access for all
+                members while retaining historical operational and audit
+                records.
+              </CardDescription>
+            </div>
             <Button
               type="button"
               variant="destructive"
               onClick={() => setArchiveOpen(true)}
+              className="self-start md:self-auto"
             >
               <Archive className="h-4 w-4" aria-hidden="true" />
               <span>Archive organization</span>
             </Button>
-          </CardContent>
+          </div>
         </Card>
       </PermissionGate>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useId, useMemo, useState } from "react";
-import { Check, ChevronsUpDown, Globe } from "lucide-react";
+import { Check, ChevronDown, Globe } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -56,13 +56,13 @@ function TimeZoneItemRow({
       value={option.value}
       keywords={option.keywords}
       onSelect={() => onSelect(option.value)}
+      title={option.value}
       className={cn(
-        "flex items-center justify-between gap-3",
-        selected &&
-          "bg-[var(--surface-4)] font-medium text-[var(--text-strong)]",
+        "min-h-[56px] gap-3 px-2.5 py-2",
+        selected && "bg-[var(--surface-4)]",
       )}
     >
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         <Check
           className={cn(
             "h-4 w-4 shrink-0 text-[var(--color-yellow)]",
@@ -70,14 +70,25 @@ function TimeZoneItemRow({
           )}
           aria-hidden="true"
         />
-        <span className="truncate font-mono text-[13px]">{option.value}</span>
-        {option.isLocal ? (
-          <span className="shrink-0 rounded-[var(--radius-sm)] border border-[var(--border-default)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-secondary)]">
-            Local
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate font-mono text-[13px] text-[var(--text-strong)]">
+              {option.value}
+            </span>
+            {option.isLocal ? (
+              <span className="shrink-0 rounded-[var(--radius-sm)] border border-[var(--border-default)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-secondary)]">
+                Local
+              </span>
+            ) : null}
+          </div>
+          <span className="mt-0.5 block truncate text-xs text-[var(--text-muted)]">
+            {option.region === "Universal"
+              ? "Universal time"
+              : `${option.region} region`}
           </span>
-        ) : null}
+        </div>
       </div>
-      <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-muted)]">
+      <span className="shrink-0 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-2)] px-2 py-1 font-mono text-[11px] tabular-nums text-[var(--text-secondary)]">
         {option.offset}
       </span>
     </CommandItem>
@@ -126,11 +137,12 @@ export function TimeZoneCombobox({
           role="combobox"
           aria-expanded={open}
           aria-controls={listboxId}
+          aria-haspopup="listbox"
           aria-invalid={invalid || undefined}
           aria-describedby={ariaDescribedBy}
           disabled={disabled}
           className={cn(
-            "flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-2)] px-3.5 py-2.5 text-start text-base leading-5 text-[var(--text-strong)] sm:text-sm transition-colors duration-150 hover:border-[var(--border-strong)] focus-visible:border-[var(--border-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-55 aria-[invalid=true]:border-[var(--status-critical)] aria-[invalid=true]:hover:border-[var(--status-critical)]",
+            "group flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-2)] px-3.5 py-2.5 text-start text-base leading-5 text-[var(--text-strong)] transition-[background-color,border-color] duration-150 hover:border-[var(--border-strong)] hover:bg-[var(--surface-3)] focus-visible:border-[var(--border-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] data-[state=open]:border-[var(--border-strong)] data-[state=open]:bg-[var(--surface-3)] disabled:cursor-not-allowed disabled:opacity-55 aria-[invalid=true]:border-[var(--status-critical)] aria-[invalid=true]:hover:border-[var(--status-critical)] sm:text-sm",
             className,
           )}
         >
@@ -149,12 +161,12 @@ export function TimeZoneCombobox({
           </span>
           <span className="flex shrink-0 items-center gap-2">
             {selectedOffset ? (
-              <span className="font-mono text-xs tabular-nums text-[var(--text-muted)]">
+              <span className="hidden rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-3)] px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-[var(--text-secondary)] sm:inline-flex">
                 {selectedOffset}
               </span>
             ) : null}
-            <ChevronsUpDown
-              className="h-4 w-4 shrink-0 text-[var(--text-muted)]"
+            <ChevronDown
+              className="h-4 w-4 shrink-0 text-[var(--text-muted)] transition-transform duration-200 group-data-[state=open]:rotate-180"
               aria-hidden="true"
             />
           </span>
@@ -162,12 +174,28 @@ export function TimeZoneCombobox({
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-[var(--radix-popover-trigger-width)] min-w-[300px] p-0"
+        className="grid max-h-[var(--radix-popover-content-available-height)] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden p-0"
       >
-        <Command>
-          <CommandInput placeholder="Search city, region, or UTC offset..." />
-          <CommandList id={listboxId}>
-            <CommandEmpty>No matching IANA time zone.</CommandEmpty>
+        <Command label="Time zones" defaultValue={value} loop className="contents">
+          <CommandInput
+            aria-label="Search time zones"
+            placeholder="Search city, region, or UTC offset..."
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <CommandList
+            id={listboxId}
+            aria-label="Time zones"
+            className="min-h-0 p-1.5"
+          >
+            <CommandEmpty>
+              <span className="block text-sm text-[var(--text-secondary)]">
+                No matching time zones
+              </span>
+              <span className="mt-1 block text-xs">
+                Try a city, region, or UTC offset.
+              </span>
+            </CommandEmpty>
             <CommandGroup heading="Common & local">
               {catalog.recommended.map((option) => (
                 <TimeZoneItemRow
@@ -194,6 +222,25 @@ export function TimeZoneCombobox({
               </>
             ) : null}
           </CommandList>
+          <div
+            className="flex items-center justify-between gap-3 border-t border-[var(--border-subtle)] px-3 py-2 text-[11px] text-[var(--text-muted)]"
+            aria-hidden="true"
+          >
+            <span>IANA time zones</span>
+            <span className="hidden items-center gap-1.5 sm:flex">
+              <kbd className="rounded-[var(--radius-sm)] border border-[var(--border-default)] bg-[var(--surface-3)] px-1 py-0.5 font-mono text-[10px] text-[var(--text-secondary)]">
+                ↑
+              </kbd>
+              <kbd className="rounded-[var(--radius-sm)] border border-[var(--border-default)] bg-[var(--surface-3)] px-1 py-0.5 font-mono text-[10px] text-[var(--text-secondary)]">
+                ↓
+              </kbd>
+              <span>navigate</span>
+              <kbd className="rounded-[var(--radius-sm)] border border-[var(--border-default)] bg-[var(--surface-3)] px-1 py-0.5 font-mono text-[10px] text-[var(--text-secondary)]">
+                ↵
+              </kbd>
+              <span>select</span>
+            </span>
+          </div>
         </Command>
       </PopoverContent>
     </Popover>
