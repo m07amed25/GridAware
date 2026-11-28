@@ -60,6 +60,15 @@ function ProtectedShellSkeleton() {
   );
 }
 
+function ProtectedContentSkeleton() {
+  return (
+    <div className="mx-auto space-y-6" aria-busy="true">
+      <Skeleton className="h-8 w-56" />
+      <Skeleton className="h-44 w-full rounded-[var(--radius-card)]" />
+    </div>
+  );
+}
+
 export default function ProtectedLayout({
   children,
 }: {
@@ -67,7 +76,11 @@ export default function ProtectedLayout({
 }) {
   return (
     <Suspense fallback={<ProtectedShellSkeleton />}>
-      <ProtectedShellGate>{children}</ProtectedShellGate>
+      <ProtectedShellGate>
+        <Suspense fallback={<ProtectedContentSkeleton />}>
+          {children}
+        </Suspense>
+      </ProtectedShellGate>
     </Suspense>
   );
 }

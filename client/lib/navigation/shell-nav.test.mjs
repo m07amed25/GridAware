@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import * as shellNav from "./shell-nav.mjs";
 import {
   buildShellNavGroups,
   extractActiveOrgId,
@@ -100,6 +101,43 @@ describe("Shell navigation helpers", () => {
       ownerOrg[1].items.map((item) => item.id),
       ["org-overview", "org-sites", "org-members", "org-roles", "org-settings"],
     );
+  });
+
+  it("publishes atomic pathname and organization snapshots", () => {
+    assert.equal(typeof shellNav.createShellPathStore, "function");
+    const store = shellNav.createShellPathStore();
+    const initialSnapshot = store.getSnapshot();
+    let notifications = 0;
+    const unsubscribe = store.subscribe(() => {
+      notifications += 1;
+    });
+
+    assert.deepEqual(initialSnapshot, { pathname: "", activeOrgId: null });
+    assert.equal(store.getServerSnapshot(), initialSnapshot);
+
+    store.setPathname("/app/organizations/org-1/sites");
+    assert.deepEqual(store.getSnapshot(), {
+      pathname: "/app/organizations/org-1/sites",
+      activeOrgId: "org-1",
+    });
+    assert.equal(notifications, 1);
+
+    const sameSnapshot = store.getSnapshot();
+    store.setPathname("/app/organizations/org-1/sites");
+    assert.equal(store.getSnapshot(), sameSnapshot);
+    assert.equal(notifications, 1);
+
+    store.setPathname("/app/organizations/org-2/devices");
+    assert.deepEqual(store.getSnapshot(), {
+      pathname: "/app/organizations/org-2/devices",
+      activeOrgId: "org-2",
+    });
+    assert.equal(notifications, 2);
+
+    unsubscribe();
+    store.setPathname("/app");
+    assert.deepEqual(store.getSnapshot(), { pathname: "/app", activeOrgId: null });
+    assert.equal(notifications, 2);
   });
 
   it("derives crisp 2-letter user initials safely", () => {

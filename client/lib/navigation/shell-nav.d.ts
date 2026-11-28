@@ -23,6 +23,20 @@ export interface ShellNavGroupDescriptor {
 
 export function extractActiveOrgId(pathname: string): string | null;
 
+export interface ShellPathSnapshot {
+  pathname: string;
+  activeOrgId: string | null;
+}
+
+export interface ShellPathStore {
+  subscribe(listener: () => void): () => void;
+  getSnapshot(): ShellPathSnapshot;
+  getServerSnapshot(): ShellPathSnapshot;
+  setPathname(pathname: string): void;
+}
+
+export function createShellPathStore(): ShellPathStore;
+
 export function resolveActiveSidebarId(
   pathname: string,
   activeOrgId: string | null,

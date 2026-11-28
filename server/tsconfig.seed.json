@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist",
+    "declaration": false,
+    "incremental": false
+  },
+  "include": ["prisma/seed-metrics.ts"],
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+}

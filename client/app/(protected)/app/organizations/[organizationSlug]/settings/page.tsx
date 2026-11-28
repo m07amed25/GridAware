@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAccessContext } from "@/components/authorization/access-context-provider";
 import { PermissionDeniedState } from "@/components/authorization/permission-denied-state";
 import { PermissionGate } from "@/components/authorization/permission-gate";
+import { TimeZoneCombobox } from "@/components/locations/time-zone-combobox";
 import { ApiClientError } from "@/lib/auth/client";
 import {
   archiveOrganization,
@@ -42,20 +43,6 @@ import {
   updateOrganizationProfile,
 } from "@/lib/authorization/api";
 import type { OrganizationProfile } from "@/lib/authorization/types";
-
-const COMMON_TIMEZONES = [
-  "UTC",
-  "Africa/Cairo",
-  "Europe/London",
-  "Europe/Berlin",
-  "Asia/Riyadh",
-  "Asia/Dubai",
-  "America/New_York",
-  "America/Chicago",
-  "America/Los_Angeles",
-  "Asia/Singapore",
-  "Asia/Tokyo",
-];
 
 interface ProfileState {
   organizationId: string;
@@ -115,7 +102,6 @@ export default function OrganizationSettingsPage() {
   }
 
   const canUpdate = can("organization:update");
-  const timezoneOptions = [...new Set([timezone, ...COMMON_TIMEZONES])];
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -223,19 +209,12 @@ export default function OrganizationSettingsPage() {
 
             <div className="space-y-2">
               <Label htmlFor="settings-org-timezone">Default timezone</Label>
-              <select
+              <TimeZoneCombobox
                 id="settings-org-timezone"
                 value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
+                onValueChange={setTimezone}
                 disabled={!canUpdate || saving}
-                className="flex h-11 w-full rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text-strong)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-              >
-                {timezoneOptions.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             {canUpdate ? (

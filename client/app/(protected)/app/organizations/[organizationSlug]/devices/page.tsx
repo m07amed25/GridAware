@@ -64,7 +64,17 @@ export default function DevicesPage() {
     device: DeviceRecord;
     action: 'revoke' | 'retire';
   } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const [loadedRequestKey, setLoadedRequestKey] = useState('');
+  const requestKey = JSON.stringify([
+    orgSlug,
+    page,
+    search,
+    statusFilter,
+    typeFilter,
+    refreshVersion,
+  ]);
+  const loading = loadedRequestKey !== requestKey;
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -78,29 +88,38 @@ export default function DevicesPage() {
   const [provisioned, setProvisioned] = useState<ProvisioningResponse | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const refresh = useCallback(async () => {
-    if (!orgSlug) return;
-    setLoading(true);
+  const refresh = useCallback(() => {
     setError(null);
-    try {
-      const query: Record<string, string> = { page: String(page), pageSize: '25' };
-      if (search.trim()) query.search = search.trim();
-      if (statusFilter) query.status = statusFilter;
-      if (typeFilter) query.deviceType = typeFilter;
-      const data = await listDevices(orgSlug, query);
-      setDevices(data.items);
-      setTotalCount(data.pagination.total);
-      setTotalPages(Math.max(1, data.pagination.totalPages));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load devices');
-    } finally {
-      setLoading(false);
-    }
-  }, [orgSlug, page, search, statusFilter, typeFilter]);
+    setRefreshVersion((version) => version + 1);
+  }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (!orgSlug) return;
+    let active = true;
+    const query: Record<string, string> = { page: String(page), pageSize: '25' };
+    if (search.trim()) query.search = search.trim();
+    if (statusFilter) query.status = statusFilter;
+    if (typeFilter) query.deviceType = typeFilter;
+
+    listDevices(orgSlug, query)
+      .then((data) => {
+        if (!active) return;
+        setDevices(data.items);
+        setTotalCount(data.pagination.total);
+        setTotalPages(Math.max(1, data.pagination.totalPages));
+        setError(null);
+        setLoadedRequestKey(requestKey);
+      })
+      .catch((err: Error) => {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : 'Failed to load devices');
+        setLoadedRequestKey(requestKey);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [orgSlug, page, search, statusFilter, typeFilter, requestKey]);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -118,7 +137,7 @@ export default function DevicesPage() {
       setName('');
       setDeviceKey('');
       setDescription('');
-      await refresh();
+      refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to register device';
       setError(msg);
@@ -138,7 +157,7 @@ export default function DevicesPage() {
       setProvisioned(res);
       setCopied(false);
       toast.success(rotate ? 'Credentials rotated — save the new secret now.' : 'One-time credentials issued.');
-      await refresh();
+      refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Credential operation failed';
       setError(msg);
@@ -157,7 +176,7 @@ export default function DevicesPage() {
     try {
       await runDeviceAction(orgSlug, deviceId, action);
       toast.success(`Device ${action}d successfully.`);
-      await refresh();
+      refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : `Failed to ${action} device`;
       setError(msg);

@@ -53,7 +53,7 @@ export function OrganizationSwitcher() {
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+  }, [activeOrgId]);
 
   if (!loaded) {
     return null;

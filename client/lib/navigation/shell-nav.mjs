@@ -21,6 +21,40 @@ export function extractActiveOrgId(pathname) {
   }
 }
 
+export function createShellPathStore() {
+  const serverSnapshot = { pathname: "", activeOrgId: null };
+  let snapshot = serverSnapshot;
+  const listeners = new Set();
+
+  return {
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    getSnapshot() {
+      return snapshot;
+    },
+    getServerSnapshot() {
+      return serverSnapshot;
+    },
+    setPathname(pathname) {
+      const activeOrgId = extractActiveOrgId(pathname);
+      if (
+        snapshot.pathname === pathname &&
+        snapshot.activeOrgId === activeOrgId
+      ) {
+        return;
+      }
+      snapshot = { pathname, activeOrgId };
+      for (const listener of listeners) {
+        listener();
+      }
+    },
+  };
+}
+
 /**
  * Resolves the active sidebar navigation item ID for a pathname and active organization ID.
  * @param {string} pathname

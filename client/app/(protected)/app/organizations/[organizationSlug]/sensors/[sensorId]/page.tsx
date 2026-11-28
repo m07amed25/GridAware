@@ -24,13 +24,14 @@ export default function SensorDetailPage() {
   const [auditLogs, setAuditLogs] = useState<
     Array<{ id: string; action: string; occurredAt: string }>
   >([]);
-  const [loading, setLoading] = useState(true);
+  const [loadedRequestKey, setLoadedRequestKey] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const requestKey = `${orgSlug}:${sensorId}`;
+  const loading = loadedRequestKey !== requestKey;
 
   useEffect(() => {
     if (!orgSlug || !sensorId) return;
     let active = true;
-    setLoading(true);
     Promise.all([
       getSensor(orgSlug, sensorId),
       listSensorAuditLogs(orgSlug, sensorId).catch(() => []),
@@ -39,17 +40,18 @@ export default function SensorDetailPage() {
         if (!active) return;
         setSensor(s);
         setAuditLogs(logs);
+        setError(null);
       })
       .catch((err: Error) => {
         if (active) setError(err.message);
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) setLoadedRequestKey(requestKey);
       });
     return () => {
       active = false;
     };
-  }, [orgSlug, sensorId]);
+  }, [orgSlug, sensorId, requestKey]);
 
   if (loading) {
     return (

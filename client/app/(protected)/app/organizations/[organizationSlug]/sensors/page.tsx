@@ -67,7 +67,16 @@ export default function SensorsPage() {
   const [sites, setSites] = useState<SiteSummary[]>([]);
   const [devices, setDevices] = useState<DeviceRecord[]>([]);
   const [metrics, setMetrics] = useState<MetricDefinitionRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const [loadedRequestKey, setLoadedRequestKey] = useState('');
+  const requestKey = JSON.stringify([
+    orgSlug,
+    page,
+    search,
+    statusFilter,
+    refreshVersion,
+  ]);
+  const loading = loadedRequestKey !== requestKey;
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -91,40 +100,53 @@ export default function SensorsPage() {
   const [assignSensor, setAssignSensor] = useState<SensorRecord | null>(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
 
-  const refresh = useCallback(async () => {
-    if (!orgSlug) return;
-    setLoading(true);
+  const refresh = useCallback(() => {
     setError(null);
-    try {
-      const query: Record<string, string> = { page: String(page), pageSize: '25' };
-      if (search.trim()) query.search = search.trim();
-      if (statusFilter) query.status = statusFilter;
-      const [sensorData, assetList, siteList, deviceData, metricList] = await Promise.all([
-        listSensors(orgSlug, query),
-        listAssets(orgSlug).catch(() => []),
-        listSitesSummary(orgSlug).catch(() => []),
-        listDevices(orgSlug).catch(() => ({ items: [] })),
-        listMetricDefinitions(orgSlug).catch(() => []),
-      ]);
-      setSensors(sensorData.items);
-      setTotalCount(sensorData.pagination.total);
-      setTotalPages(Math.max(1, sensorData.pagination.totalPages));
-      setAssets(assetList);
-      setSites(siteList);
-      setDevices(deviceData.items);
-      setMetrics(metricList);
-      if (assetList.length > 0 && !assetId) setAssetId(assetList[0].id);
-      if (siteList.length > 0 && !siteId) setSiteId(siteList[0].id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load sensors');
-    } finally {
-      setLoading(false);
-    }
-  }, [orgSlug, assetId, siteId, page, search, statusFilter]);
+    setRefreshVersion((version) => version + 1);
+  }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (!orgSlug) return;
+    let active = true;
+    const query: Record<string, string> = { page: String(page), pageSize: '25' };
+    if (search.trim()) query.search = search.trim();
+    if (statusFilter) query.status = statusFilter;
+
+    Promise.all([
+      listSensors(orgSlug, query),
+      listAssets(orgSlug).catch(() => []),
+      listSitesSummary(orgSlug).catch(() => []),
+      listDevices(orgSlug).catch(() => ({ items: [] })),
+      listMetricDefinitions(orgSlug).catch(() => []),
+    ])
+      .then(([sensorData, assetList, siteList, deviceData, metricList]) => {
+        if (!active) return;
+        setSensors(sensorData.items);
+        setTotalCount(sensorData.pagination.total);
+        setTotalPages(Math.max(1, sensorData.pagination.totalPages));
+        setAssets(assetList);
+        setSites(siteList);
+        setDevices(deviceData.items);
+        setMetrics(metricList);
+        if (assetList.length > 0) {
+          setAssetId((current) => current || assetList[0].id);
+        }
+        if (siteList.length > 0) {
+          setSiteId((current) => current || siteList[0].id);
+        }
+        setError(null);
+        setLoadedRequestKey(requestKey);
+      })
+      .catch((err: Error) => {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : 'Failed to load sensors');
+        setLoadedRequestKey(requestKey);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [orgSlug, page, search, statusFilter, requestKey]);
 
   async function handleQuickCreateAsset(e: React.FormEvent) {
     e.preventDefault();
@@ -163,7 +185,7 @@ export default function SensorsPage() {
       setShowRegister(false);
       setSensorKey('');
       setName('');
-      await refresh();
+      refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to register sensor';
       setError(msg);
@@ -184,7 +206,7 @@ export default function SensorsPage() {
       ]);
       toast.success(`Configured ${selectedMetricKey} (${selectedUnit}).`);
       setMetricSensor(null);
-      await refresh();
+      refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to save metric';
       setError(msg);
@@ -203,7 +225,7 @@ export default function SensorsPage() {
       await assignSensorToDevice(orgSlug, selectedDeviceId, assignSensor.id);
       toast.success('Assigned sensor to device.');
       setAssignSensor(null);
-      await refresh();
+      refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to assign device';
       setError(msg);
@@ -219,7 +241,7 @@ export default function SensorsPage() {
     try {
       await unassignSensorFromDevice(orgSlug, deviceId, sensorId);
       toast.success('Unassigned sensor from device.');
-      await refresh();
+      refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to unassign device';
       setError(msg);
@@ -238,7 +260,7 @@ export default function SensorsPage() {
     try {
       await runSensorAction(orgSlug, sensorId, action);
       toast.success(`Sensor updated (${action}).`);
-      await refresh();
+      refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : `Failed to ${action} sensor`;
       setError(msg);

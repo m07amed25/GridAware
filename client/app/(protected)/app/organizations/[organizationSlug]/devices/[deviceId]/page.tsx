@@ -35,13 +35,14 @@ export default function DeviceDetailPage() {
     }>
   >([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadedRequestKey, setLoadedRequestKey] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const requestKey = `${orgSlug}:${deviceId}`;
+  const loading = loadedRequestKey !== requestKey;
 
   useEffect(() => {
     if (!orgSlug || !deviceId) return;
     let active = true;
-    setLoading(true);
     Promise.all([
       getDevice(orgSlug, deviceId),
       listDeviceCredentials(orgSlug, deviceId).catch(() => []),
@@ -54,17 +55,18 @@ export default function DeviceDetailPage() {
         setCredentials(creds);
         setAssignedSensors(sensors);
         setAuditLogs(logs);
+        setError(null);
       })
       .catch((err: Error) => {
         if (active) setError(err.message);
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) setLoadedRequestKey(requestKey);
       });
     return () => {
       active = false;
     };
-  }, [orgSlug, deviceId]);
+  }, [orgSlug, deviceId, requestKey]);
 
   if (loading) {
     return (
