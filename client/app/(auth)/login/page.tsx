@@ -230,7 +230,7 @@ function LoginFormContent() {
               <div>
                 <Link
                   href={buildVerifyEmailHref({ email })}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-yellow)] underline underline-offset-4 hover:text-[var(--brand-primary-hover)]"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent-ink)] underline underline-offset-4 hover:text-[var(--accent-gold-ink)]"
                 >
                   <span>Resend verification email</span>
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -278,7 +278,7 @@ function LoginFormContent() {
           labelAction={
             <Link
               href={buildForgotPasswordHref({ email })}
-              className="text-xs font-medium text-[var(--text-secondary)] underline underline-offset-4 hover:text-[var(--color-yellow)]"
+              className="text-xs font-medium text-[var(--text-secondary)] underline underline-offset-4 hover:text-[var(--accent-ink)]"
             >
               Forgot passphrase?
             </Link>
@@ -323,7 +323,7 @@ function LoginFormContent() {
               ? `/register?email=${encodeURIComponent(email.trim())}`
               : "/register"
           }
-          className="font-semibold text-[var(--color-yellow)] underline underline-offset-4 hover:text-[var(--brand-primary-hover)]"
+          className="font-semibold text-[var(--accent-ink)] underline underline-offset-4 hover:text-[var(--accent-gold-ink)]"
         >
           Create account
         </Link>

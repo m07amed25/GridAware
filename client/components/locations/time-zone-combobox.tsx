@@ -65,7 +65,7 @@ function TimeZoneItemRow({
       <div className="flex min-w-0 items-center gap-2">
         <Check
           className={cn(
-            "h-4 w-4 shrink-0 text-[var(--color-yellow)]",
+            "h-4 w-4 shrink-0 text-[var(--accent-ink)]",
             selected ? "opacity-100" : "opacity-0",
           )}
           aria-hidden="true"

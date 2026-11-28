@@ -41,6 +41,7 @@ import {
   type AnimatedSidebarGroup,
   type AnimatedSidebarItem,
 } from "@/components/ui/animated-sidebar";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -262,26 +263,48 @@ function ProtectedSidebar({
 
   const expandedBrand = useMemo(
     () => (
-      <Image
-        src="/brand/gridaware-horizontal-dark.svg"
-        alt="GridAware"
-        width={161}
-        height={40}
-        priority
-      />
+      <>
+        <Image
+          src="/brand/gridaware-horizontal-ink.svg"
+          alt="GridAware"
+          width={161}
+          height={40}
+          priority
+          className="dark:hidden"
+        />
+        <Image
+          src="/brand/gridaware-horizontal-dark.svg"
+          alt="GridAware"
+          width={161}
+          height={40}
+          priority
+          className="hidden dark:block"
+        />
+      </>
     ),
     [],
   );
 
   const collapsedBrand = useMemo(
     () => (
-      <Image
-        src="/brand/gridaware-symbol-small-dark.svg"
-        alt=""
-        width={28}
-        height={28}
-        priority
-      />
+      <>
+        <Image
+          src="/brand/gridaware-symbol-small-ink.svg"
+          alt=""
+          width={28}
+          height={28}
+          priority
+          className="dark:hidden"
+        />
+        <Image
+          src="/brand/gridaware-symbol-small-dark.svg"
+          alt=""
+          width={28}
+          height={28}
+          priority
+          className="hidden dark:block"
+        />
+      </>
     ),
     [],
   );

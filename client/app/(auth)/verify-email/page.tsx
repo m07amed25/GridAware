@@ -148,7 +148,7 @@ function VerifyEmailInner({
             Verifying your email
           </h1>
           <p className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-            <Loader2 className="h-4 w-4 animate-spin text-[var(--color-yellow)]" aria-hidden="true" />
+            <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-ink)]" aria-hidden="true" />
             <span>Confirming your single-use verification link...</span>
           </p>
         </div>
@@ -209,7 +209,7 @@ function VerifyEmailInner({
 
       {sent && initialEmail ? (
         <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-canvas)]/70 px-3.5 py-3">
-          <Mail className="h-4 w-4 shrink-0 text-[var(--color-yellow)]" aria-hidden="true" />
+          <Mail className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" aria-hidden="true" />
           <div className="min-w-0">
             <p className="text-xs text-[var(--text-muted)]">Sent to</p>
             <p className="truncate font-mono text-sm text-[var(--text-strong)]">
@@ -329,7 +329,7 @@ function VerifyEmailInner({
         Already verified?{" "}
         <Link
           href={buildLoginHref({ email })}
-          className="font-semibold text-[var(--color-yellow)] underline underline-offset-4 hover:text-[var(--brand-primary-hover)]"
+          className="font-semibold text-[var(--accent-ink)] underline underline-offset-4 hover:text-[var(--accent-gold-ink)]"
         >
           Back to sign in
         </Link>

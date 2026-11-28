@@ -182,7 +182,7 @@ export default function OrganizationSettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings
-              className="h-4 w-4 text-[var(--color-yellow)]"
+              className="h-4 w-4 text-[var(--accent-ink)]"
               aria-hidden="true"
             />
             <span>General profile</span>
