@@ -373,7 +373,7 @@ function BuildingDetailInner({
                 Parent site:{" "}
                 <Link
                   href={siteHref}
-                  className="text-[var(--text-primary)] underline-offset-4 hover:text-[var(--color-yellow)] hover:underline"
+                  className="text-[var(--text-primary)] underline-offset-4 hover:text-[var(--accent-ink)] hover:underline"
                 >
                   {site.name}
                 </Link>

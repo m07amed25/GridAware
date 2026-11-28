@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   /* Immutable EVARAX Brand Palette (DESIGN.md §3.1 — exact HEX, never alter) */
   --color-yellow: #F4E952;
@@ -13,38 +15,42 @@
   --brand-primary-hover: #FAF173;
   --brand-primary-active: #E3D840;
 
-  /* Derived Dark Neutral Surfaces (DESIGN.md §3.2) */
-  --surface-canvas: #080808;
-  --surface-1: #101010;
-  --surface-2: #171717;
-  --surface-3: #202020;
-  --surface-4: #292929;
-  --border-subtle: #2A2A2A;
-  --border-default: #363636;
-  --border-strong: #555555;
+  /* Light Neutral Surfaces */
+  --surface-canvas: #F4F5F7;
+  --surface-1: #FFFFFF;
+  --surface-2: #F9FAFB;
+  --surface-3: #F0F2F5;
+  --surface-4: #E6E9EE;
+  --border-subtle: #E2E5EA;
+  --border-default: #7A8492;
+  --border-strong: #626D7B;
 
-  /* Text Hierarchy (DESIGN.md §3.2) */
-  --text-primary: #E9ECF2;
-  --text-strong: #FFFFFF;
-  --text-secondary: #B8BDC7;
-  --text-muted: #9298A3;
-  --text-disabled: #707680;
+  /* Light Text Hierarchy */
+  --text-primary: #20242B;
+  --text-strong: #080808;
+  --text-secondary: #4B5563;
+  --text-muted: #626B78;
+  --text-disabled: #8A929E;
+  --accent-ink: #625A00;
+  --accent-gold-ink: #795500;
 
-  /* Semantic Operational Status Tokens (DESIGN.md §3.3 — distinct from brand accents) */
-  --status-success: #35C58A;
-  --status-success-bg: rgba(53, 197, 138, 0.12);
-  --status-success-border: rgba(53, 197, 138, 0.42);
-  --status-warning: #F0B84B;
-  --status-warning-bg: rgba(240, 184, 75, 0.12);
-  --status-warning-border: rgba(240, 184, 75, 0.42);
-  --status-critical: #F06A6A;
-  --status-critical-bg: rgba(240, 106, 106, 0.12);
-  --status-critical-border: rgba(240, 106, 106, 0.45);
-  --status-info: #65A9E8;
-  --status-info-bg: rgba(101, 169, 232, 0.12);
-  --status-info-border: rgba(101, 169, 232, 0.42);
-  --status-offline: #9AA1AC;
-  --status-unknown: #B3A4D8;
+  /* Light Semantic Operational Status Tokens */
+  --status-success: #0F6B49;
+  --status-success-bg: rgba(15, 107, 73, 0.1);
+  --status-success-border: rgba(15, 107, 73, 0.35);
+  --status-warning: #8A5A00;
+  --status-warning-bg: rgba(138, 90, 0, 0.1);
+  --status-warning-border: rgba(138, 90, 0, 0.35);
+  --status-critical: #B42318;
+  --status-critical-hover: #991B14;
+  --status-critical-active: #7A1710;
+  --status-critical-bg: rgba(180, 35, 24, 0.1);
+  --status-critical-border: rgba(180, 35, 24, 0.35);
+  --status-info: #1D4ED8;
+  --status-info-bg: rgba(29, 78, 216, 0.1);
+  --status-info-border: rgba(29, 78, 216, 0.35);
+  --status-offline: #626B78;
+  --status-unknown: #6941C6;
 
   /* Radii (DESIGN.md §9) */
   --radius-sm: 6px;
@@ -55,10 +61,55 @@
   --radius-card: var(--radius-lg);
   --radius: var(--radius-md);
 
-  /* Focus Ring */
-  --focus-ring: var(--color-lime);
+  --focus-ring: #080808;
+  --destructive-foreground: #FFFFFF;
+}
 
-  /* shadcn/ui Semantic Aliases Mapped Directly to EVARAX Tokens */
+.dark {
+  /* Derived Dark Neutral Surfaces (DESIGN.md §3.2) */
+  --surface-canvas: #080808;
+  --surface-1: #101010;
+  --surface-2: #171717;
+  --surface-3: #202020;
+  --surface-4: #292929;
+  --border-subtle: #2A2A2A;
+  --border-default: #363636;
+  --border-strong: #555555;
+
+  /* Dark Text Hierarchy (DESIGN.md §3.2) */
+  --text-primary: #E9ECF2;
+  --text-strong: #FFFFFF;
+  --text-secondary: #B8BDC7;
+  --text-muted: #9298A3;
+  --text-disabled: #707680;
+  --accent-ink: var(--color-yellow);
+  --accent-gold-ink: var(--color-gold);
+
+  /* Dark Semantic Operational Status Tokens (DESIGN.md §3.3) */
+  --status-success: #35C58A;
+  --status-success-bg: rgba(53, 197, 138, 0.12);
+  --status-success-border: rgba(53, 197, 138, 0.42);
+  --status-warning: #F0B84B;
+  --status-warning-bg: rgba(240, 184, 75, 0.12);
+  --status-warning-border: rgba(240, 184, 75, 0.42);
+  --status-critical: #F06A6A;
+  --status-critical-hover: #F57C7C;
+  --status-critical-active: #D95252;
+  --status-critical-bg: rgba(240, 106, 106, 0.12);
+  --status-critical-border: rgba(240, 106, 106, 0.45);
+  --status-info: #65A9E8;
+  --status-info-bg: rgba(101, 169, 232, 0.12);
+  --status-info-border: rgba(101, 169, 232, 0.42);
+  --status-offline: #9AA1AC;
+  --status-unknown: #B3A4D8;
+
+  --focus-ring: var(--color-lime);
+  --destructive-foreground: var(--color-black);
+}
+
+:root,
+.dark {
+  /* shadcn/ui Semantic Aliases Mapped to Theme Tokens */
   --background: var(--surface-canvas);
   --foreground: var(--text-primary);
   --card: var(--surface-1);
@@ -74,7 +125,6 @@
   --accent: var(--surface-3);
   --accent-foreground: var(--text-strong);
   --destructive: var(--status-critical);
-  --destructive-foreground: var(--color-black);
   --border: var(--border-subtle);
   --input: var(--border-default);
   --ring: var(--focus-ring);
@@ -114,6 +164,8 @@
   --color-brand-gold: var(--color-gold);
   --color-brand-primary-hover: var(--brand-primary-hover);
   --color-brand-primary-active: var(--brand-primary-active);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-gold-ink: var(--accent-gold-ink);
   --color-text-primary: var(--text-primary);
   --color-text-strong: var(--text-strong);
   --color-text-secondary: var(--text-secondary);
@@ -123,6 +175,8 @@
   --color-status-success: var(--status-success);
   --color-status-warning: var(--status-warning);
   --color-status-critical: var(--status-critical);
+  --color-status-critical-hover: var(--status-critical-hover);
+  --color-status-critical-active: var(--status-critical-active);
   --color-status-info: var(--status-info);
   --color-status-offline: var(--status-offline);
   --color-status-unknown: var(--status-unknown);
@@ -137,11 +191,15 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   background-color: var(--surface-canvas);
   color: var(--text-primary);
   scrollbar-color: var(--border-default) var(--surface-canvas);
   scrollbar-width: thin;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 body {
@@ -155,12 +213,17 @@ body {
 
 input,
 textarea {
-  caret-color: var(--color-yellow);
+  caret-color: var(--accent-ink);
 }
 
 ::selection {
   background-color: var(--color-yellow);
   color: var(--color-black);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
 }
 
 :focus-visible {

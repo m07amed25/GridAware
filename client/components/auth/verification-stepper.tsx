@@ -38,7 +38,7 @@ export function VerificationStepper({
                   />
                 ) : isCurrent ? (
                   <Dot
-                    className="h-4 w-4 shrink-0 text-[var(--color-yellow)]"
+                    className="h-4 w-4 shrink-0 text-[var(--accent-ink)]"
                     strokeWidth={4}
                     aria-hidden="true"
                   />

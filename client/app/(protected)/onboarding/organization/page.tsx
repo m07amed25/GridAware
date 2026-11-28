@@ -115,7 +115,7 @@ export default function CreateOrganizationPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Building2
-              className="h-5 w-5 text-[var(--color-yellow)]"
+              className="h-5 w-5 text-[var(--accent-ink)]"
               aria-hidden="true"
             />
             <span>Organization details</span>

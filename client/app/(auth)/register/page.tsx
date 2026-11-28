@@ -261,13 +261,13 @@ function RegisterFormContent() {
               <div className="flex flex-wrap gap-4 pt-0.5 text-xs font-semibold">
                 <Link
                   href={buildLoginHref({ email })}
-                  className="text-[var(--color-yellow)] underline underline-offset-4 hover:text-[var(--brand-primary-hover)]"
+                  className="text-[var(--accent-ink)] underline underline-offset-4 hover:text-[var(--accent-gold-ink)]"
                 >
                   Sign in with this email
                 </Link>
                 <Link
                   href={buildForgotPasswordHref({ email })}
-                  className="text-[var(--color-yellow)] underline underline-offset-4 hover:text-[var(--brand-primary-hover)]"
+                  className="text-[var(--accent-ink)] underline underline-offset-4 hover:text-[var(--accent-gold-ink)]"
                 >
                   Reset passphrase
                 </Link>
@@ -413,7 +413,7 @@ function RegisterFormContent() {
         Already have an account?{" "}
         <Link
           href={buildLoginHref({ email })}
-          className="font-semibold text-[var(--color-yellow)] underline underline-offset-4 hover:text-[var(--brand-primary-hover)]"
+          className="font-semibold text-[var(--accent-ink)] underline underline-offset-4 hover:text-[var(--accent-gold-ink)]"
         >
           Sign in
         </Link>

@@ -52,7 +52,7 @@ async function RootEntry() {
           </Badge>
           <Link
             href="/forgot-password"
-            className="font-medium text-[var(--text-secondary)] underline underline-offset-4 hover:text-[var(--color-yellow)]"
+            className="font-medium text-[var(--text-secondary)] underline underline-offset-4 hover:text-[var(--accent-ink)]"
           >
             Need to recover access?
           </Link>

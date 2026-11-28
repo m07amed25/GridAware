@@ -108,7 +108,7 @@ function ForgotPasswordContent() {
         </Alert>
 
         <div className="flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-canvas)]/70 p-3.5 text-xs leading-5 text-[var(--text-secondary)]">
-          <Mail className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-yellow)]" aria-hidden="true" />
+          <Mail className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-ink)]" aria-hidden="true" />
           <p>
             Didn&apos;t see an email after a few minutes? Check your spam folder
             or verify that you entered the right work email address.
@@ -213,7 +213,7 @@ function ForgotPasswordContent() {
         Remembered your passphrase?{" "}
         <Link
           href={buildLoginHref({ email })}
-          className="font-semibold text-[var(--color-yellow)] underline underline-offset-4 hover:text-[var(--brand-primary-hover)]"
+          className="font-semibold text-[var(--accent-ink)] underline underline-offset-4 hover:text-[var(--accent-gold-ink)]"
         >
           Back to sign in
         </Link>

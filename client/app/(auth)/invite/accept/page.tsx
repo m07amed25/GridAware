@@ -102,7 +102,7 @@ function AcceptInvitationContent() {
   return (
     <Card className="mx-auto w-full max-w-md border-[var(--border-default)] bg-[var(--surface-1)]">
       <CardHeader className="space-y-2">
-        <div className="inline-flex w-fit items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-yellow)]">
+        <div className="inline-flex w-fit items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--accent-ink)]">
           <Building2 className="h-4 w-4" aria-hidden="true" />
           <span>Organization Invitation</span>
         </div>
