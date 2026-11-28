@@ -36,7 +36,7 @@ export function FormErrorSummary({
                   const el = document.getElementById(item.fieldId);
                   el?.focus();
                 }}
-                className="font-medium text-[var(--text-strong)] underline underline-offset-4 hover:text-[var(--color-yellow)]"
+                className="font-medium text-[var(--text-strong)] underline underline-offset-4 hover:text-[var(--accent-ink)]"
               >
                 {item.fieldName}
               </a>

@@ -18,10 +18,10 @@ const buttonVariants = cva(
         ghost:
           "text-[var(--text-secondary)] hover:bg-[var(--surface-3)] hover:text-[var(--text-strong)] active:bg-[var(--surface-4)]",
         destructive:
-          "border border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] text-[var(--status-critical)] font-medium hover:border-[var(--status-critical)] hover:bg-[var(--status-critical)] hover:text-[var(--color-black)] active:bg-[#dc5656] active:text-[var(--color-black)]",
+          "border border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] text-[var(--status-critical)] font-medium hover:border-[var(--status-critical-hover)] hover:bg-[var(--status-critical-hover)] hover:text-[var(--destructive-foreground)] active:bg-[var(--status-critical-active)] active:text-[var(--destructive-foreground)]",
         destructiveSolid:
-          "bg-[var(--status-critical)] text-[var(--color-black)] font-semibold hover:-translate-y-[1px] hover:bg-[#f57c7c] active:translate-y-0 active:bg-[#d95252]",
-        link: "min-h-0 px-0 py-0 text-[var(--color-yellow)] underline-offset-4 hover:text-[var(--brand-primary-hover)] hover:underline",
+          "bg-[var(--status-critical)] text-[var(--destructive-foreground)] font-semibold hover:-translate-y-[1px] hover:bg-[var(--status-critical-hover)] active:translate-y-0 active:bg-[var(--status-critical-active)]",
+        link: "min-h-0 px-0 py-0 text-[var(--accent-ink)] underline-offset-4 hover:text-[var(--accent-ink)] hover:underline",
       },
       size: {
         default: "min-h-[44px] px-4 py-2.5",

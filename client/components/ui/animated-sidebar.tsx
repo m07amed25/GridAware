@@ -274,7 +274,7 @@ export function AnimatedSidebar({
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-3 top-0 z-0 h-11 rounded-[var(--radius-md)] bg-[var(--surface-3)] opacity-0 ring-1 ring-[var(--border-default)] transition-[transform,opacity,height] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
           >
-            <span className="absolute inset-y-2.5 start-0 w-[3px] rounded-e-full bg-[var(--color-yellow)]" />
+            <span className="absolute inset-y-2.5 start-0 w-[3px] rounded-e-full bg-[var(--accent-ink)]" />
           </span>
 
           <div className="relative z-10 space-y-4">
@@ -322,7 +322,7 @@ export function AnimatedSidebar({
                                 className={cn(
                                   "flex size-[18px] shrink-0 items-center justify-center [&>svg]:size-[18px] [&>svg]:stroke-[1.8]",
                                   active
-                                    ? "text-[var(--color-yellow)]"
+                                    ? "text-[var(--accent-ink)]"
                                     : "text-[var(--text-muted)]",
                                 )}
                                 aria-hidden="true"
@@ -394,12 +394,12 @@ export function AnimatedSidebar({
                 {isAccountActive ? (
                   <span
                     aria-hidden="true"
-                    className="absolute inset-y-2.5 start-0 w-[3px] rounded-e-full bg-[var(--color-yellow)]"
+                    className="absolute inset-y-2.5 start-0 w-[3px] rounded-e-full bg-[var(--accent-ink)]"
                   />
                 ) : null}
                 <span
                   aria-hidden="true"
-                  className="grid size-8 shrink-0 place-items-center rounded-full border border-[var(--border-default)] bg-[var(--surface-2)] text-[11px] font-semibold text-[var(--color-yellow)]"
+                  className="grid size-8 shrink-0 place-items-center rounded-full border border-[var(--border-default)] bg-[var(--surface-2)] text-[11px] font-semibold text-[var(--accent-ink)]"
                 >
                   {account.initials}
                 </span>
@@ -432,7 +432,7 @@ export function AnimatedSidebar({
                 aria-expanded={open}
                 aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
                 aria-keyshortcuts="Control+B Meta+B"
-                className="group inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-2)]/70 text-[var(--text-muted)] outline-none transition-[background-color,border-color,color,transform] duration-200 hover:border-[var(--border-default)] hover:bg-[var(--surface-3)] hover:text-[var(--color-yellow)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] motion-reduce:transition-none motion-reduce:active:scale-100"
+                className="group inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-2)]/70 text-[var(--text-muted)] outline-none transition-[background-color,border-color,color,transform] duration-200 hover:border-[var(--border-default)] hover:bg-[var(--surface-3)] hover:text-[var(--accent-ink)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] motion-reduce:transition-none motion-reduce:active:scale-100"
               >
                 <ChevronsLeft
                   aria-hidden="true"

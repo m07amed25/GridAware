@@ -814,7 +814,7 @@ function SiteDetailInner({
                   onChange={(e) =>
                     setIncludeArchivedBuildings(e.target.checked)
                   }
-                  className="h-4 w-4 accent-[var(--color-yellow)]"
+                  className="h-4 w-4 accent-[var(--accent-ink)]"
                 />
                 <span>Show archived</span>
               </label>
@@ -915,7 +915,7 @@ function SiteDetailInner({
                           <div className="flex flex-col gap-0.5">
                             <Link
                               href={detailHref}
-                              className="font-medium text-[var(--text-strong)] underline-offset-4 hover:text-[var(--color-yellow)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                              className="font-medium text-[var(--text-strong)] underline-offset-4 hover:text-[var(--accent-ink)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                             >
                               {building.name}
                             </Link>

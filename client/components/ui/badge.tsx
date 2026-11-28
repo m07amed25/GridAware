@@ -19,7 +19,7 @@ const badgeVariants = cva(
           "border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] text-[var(--status-critical)]",
         info: "border-[var(--status-info-border)] bg-[var(--status-info-bg)] text-[var(--status-info)]",
         simulated:
-          "border-[rgba(252,206,53,0.45)] bg-[rgba(252,206,53,0.12)] text-[var(--color-gold)]",
+          "border-[rgba(252,206,53,0.45)] bg-[rgba(252,206,53,0.12)] text-[var(--accent-gold-ink)]",
       },
     },
     defaultVariants: {

@@ -111,7 +111,7 @@ function ResetPasswordContent() {
         <p className="text-center text-sm text-[var(--text-secondary)]">
           <Link
             href="/login"
-            className="font-semibold text-[var(--color-yellow)] underline underline-offset-4 hover:text-[var(--brand-primary-hover)]"
+            className="font-semibold text-[var(--accent-ink)] underline underline-offset-4 hover:text-[var(--accent-gold-ink)]"
           >
             Back to sign in
           </Link>
@@ -251,7 +251,7 @@ function ResetPasswordContent() {
             <div>
               <Link
                 href="/forgot-password"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-yellow)] underline underline-offset-4 hover:text-[var(--brand-primary-hover)]"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent-ink)] underline underline-offset-4 hover:text-[var(--accent-gold-ink)]"
               >
                 <span>Request a fresh recovery link</span>
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -373,7 +373,7 @@ function ResetPasswordContent() {
         Link expired?{" "}
         <Link
           href="/forgot-password"
-          className="font-semibold text-[var(--color-yellow)] underline underline-offset-4 hover:text-[var(--brand-primary-hover)]"
+          className="font-semibold text-[var(--accent-ink)] underline underline-offset-4 hover:text-[var(--accent-gold-ink)]"
         >
           Request a new reset link
         </Link>

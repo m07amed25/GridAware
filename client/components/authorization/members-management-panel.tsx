@@ -461,7 +461,7 @@ export function MembersManagementPanel() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <MailPlus
-                className="h-4 w-4 text-[var(--color-yellow)]"
+                className="h-4 w-4 text-[var(--accent-ink)]"
                 aria-hidden="true"
               />
               <span>Invite a member</span>
@@ -518,7 +518,7 @@ export function MembersManagementPanel() {
             {latestDevLink ? (
               <div className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-2)] p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="font-semibold text-[var(--color-yellow)]">
+                  <p className="font-semibold text-[var(--accent-ink)]">
                     Local dev invitation link (console mail mode)
                   </p>
                   <p className="truncate font-mono text-[var(--text-secondary)]">
@@ -880,7 +880,7 @@ export function MembersManagementPanel() {
                 type="checkbox"
                 checked={transferConfirmed}
                 onChange={(e) => setTransferConfirmed(e.target.checked)}
-                className="mt-1 h-4 w-4 accent-[var(--color-yellow)]"
+                className="mt-1 h-4 w-4 accent-[var(--accent-ink)]"
               />
               <span>
                 I understand this immediately transfers organization ownership

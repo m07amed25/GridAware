@@ -80,7 +80,7 @@ export function OrganizationSwitcher() {
           className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-2)] px-3 py-1.5 text-[13px] font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-default)] hover:bg-[var(--surface-3)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           <Building2
-            className="h-4 w-4 shrink-0 text-[var(--color-yellow)]"
+            className="h-4 w-4 shrink-0 text-[var(--accent-ink)]"
             aria-hidden="true"
           />
           <span className="max-w-[150px] truncate text-[var(--text-strong)]">
@@ -121,7 +121,7 @@ export function OrganizationSwitcher() {
               </div>
               {isCurrent ? (
                 <Check
-                  className="h-4 w-4 shrink-0 text-[var(--color-yellow)]"
+                  className="h-4 w-4 shrink-0 text-[var(--accent-ink)]"
                   aria-label="Current organization"
                 />
               ) : null}

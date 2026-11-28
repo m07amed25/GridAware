@@ -52,7 +52,7 @@ async function ProfileHeader() {
       <CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-4">
           <Avatar className="h-12 w-12 border-[var(--border-default)]">
-            <AvatarFallback className="text-sm font-semibold text-[var(--color-yellow)]">
+            <AvatarFallback className="text-sm font-semibold text-[var(--accent-ink)]">
               {getInitials(user.displayName)}
             </AvatarFallback>
           </Avatar>

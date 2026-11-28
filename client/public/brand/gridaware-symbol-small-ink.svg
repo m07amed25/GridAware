@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">GridAware small-size symbol (16px pixel-hinted)</title>
+  <path id="grid-g" fill="#080808" d="M16 36 A20 20 0 0 1 36 16 L136 16 A8 8 0 0 1 144 24 L144 56 A8 8 0 0 1 136 64 L72 64 A8 8 0 0 0 64 72 L64 184 A8 8 0 0 0 72 192 L184 192 A8 8 0 0 0 192 184 L192 166 A6 6 0 0 0 186 160 L120 160 A8 8 0 0 1 112 152 L112 120 A8 8 0 0 1 120 112 L228 112 A12 12 0 0 1 240 124 L240 220 A20 20 0 0 1 220 240 L36 240 A20 20 0 0 1 16 220 Z"/>
+  <path id="sensor-node" fill="#080808" d="M176 26 A10 10 0 0 1 186 16 L220 16 A20 20 0 0 1 240 36 L240 70 A10 10 0 0 1 230 80 L186 80 A10 10 0 0 1 176 70 Z"/>
+</svg>

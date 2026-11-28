@@ -133,7 +133,7 @@ function SessionRow({
                 <CollapsibleTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex min-h-[32px] cursor-pointer items-center gap-1 rounded-[var(--radius-sm)] text-xs font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--color-yellow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                    className="inline-flex min-h-[32px] cursor-pointer items-center gap-1 rounded-[var(--radius-sm)] text-xs font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--accent-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   >
                     <span>Client details</span>
                     <ChevronDown
@@ -428,7 +428,7 @@ export function ActiveSessionsPanel() {
               indicatorClassName={
                 sessions.length >= 9
                   ? "bg-[var(--status-warning)]"
-                  : "bg-[var(--color-yellow)]"
+                  : "bg-[var(--accent-ink)]"
               }
             />
           </div>
