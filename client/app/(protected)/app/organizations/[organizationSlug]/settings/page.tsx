@@ -196,40 +196,12 @@ export default function OrganizationSettingsPage() {
       ) : null}
 
       <Card>
-<<<<<<< HEAD
         <form onSubmit={(event) => void handleSave(event)}>
           <CardHeader className="gap-1.5 border-b border-[var(--border-subtle)]">
             <CardTitle className="flex items-center gap-2">
               <Settings
                 className="h-4 w-4 text-[var(--color-yellow)]"
                 aria-hidden="true"
-=======
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings
-              className="h-4 w-4 text-[var(--accent-ink)]"
-              aria-hidden="true"
-            />
-            <span>General profile</span>
-          </CardTitle>
-          <CardDescription>
-            Display name and default timezone for dashboards, schedules, and
-            reports.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSave(e)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="settings-org-name">Organization name</Label>
-              <Input
-                id="settings-org-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={!canUpdate || saving}
-                required
-                minLength={2}
-                maxLength={120}
->>>>>>> 4719731f6124cc9ce8c4e91ba8d35cf3846d5959
               />
               <span>General profile</span>
             </CardTitle>
